@@ -365,7 +365,6 @@ export interface IUser {
   nickname?: string;
   languageCode?: string;
   criteria: ICriteria;
-  isActive: boolean;
 };
 
 export interface IUserDocument extends IUser, Document {
@@ -415,10 +414,6 @@ const userSchema = new Schema<IUserDocument>({
   },
   languageCode: String,
   criteria: criteriaSchema,
-  isActive: {
-    type: Boolean,
-    required: true,
-  },
 }, { timestamps: true })
 
 export const User = model<IUserDocument>('User', userSchema);

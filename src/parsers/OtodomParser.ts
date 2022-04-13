@@ -4,7 +4,7 @@ import { IAdvertisement, ICriteria, AdvertisementSource, RoomsNumber } from '../
 import { BaseParser } from './BaseParser';
 
 export class OtodomParser extends BaseParser {
-  private baseSearchParams: Record<string, string> = {
+  readonly #baseSearchParams: Record<string, string> = {
     distanceRadius: '0',
     page: '1',
     limit: '36',
@@ -12,7 +12,7 @@ export class OtodomParser extends BaseParser {
     viewType: 'listing',
   };
 
-  constructor(protected criteria: ICriteria) {
+  constructor(criteria: ICriteria) {
     super(
       criteria,
       'https://www.otodom.pl',
@@ -24,7 +24,7 @@ export class OtodomParser extends BaseParser {
 
   protected composeSearchParams(): string {
     const urlSearchParams = new URLSearchParams({
-      ...this.baseSearchParams,
+      ...this.#baseSearchParams,
       ...(this.criteria.roomsNumber && {
         roomsNumber: `[${RoomsNumber[this.criteria.roomsNumber]!.toUpperCase()}]`,
       }),

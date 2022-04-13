@@ -1,4 +1,5 @@
 import type { User as ITelegramUser } from 'typegram';
+import { Store } from '../store';
 import { ICriteria } from './user.model';
 
 export * from './user.model';
@@ -22,7 +23,8 @@ export enum BlitzResponse {
   No = 'No',
 };
 
-export interface IWizardState {
+export interface IState {
   user: ITelegramUser;
   criteria: ICriteria;
+  store: Store;
 };

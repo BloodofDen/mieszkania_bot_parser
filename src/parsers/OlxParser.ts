@@ -4,7 +4,7 @@ import { IAdvertisement, AdvertisementSource, ICriteria, RoomsNumber } from '../
 import { BaseParser } from './BaseParser';
 
 export class OlxParser extends BaseParser {
-  constructor(protected criteria: ICriteria) {
+  constructor(criteria: ICriteria) {
     super(
       criteria,
       'https://www.olx.pl',

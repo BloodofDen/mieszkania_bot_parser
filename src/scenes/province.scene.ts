@@ -1,7 +1,7 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
+import { Scene, BlitzResponse, IState, Province } from '../models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
-import { Scene, BlitzResponse, IWizardState, Province } from '../models';
 
 const TEXT = {
   PLEASE_SELECT: `Please select <b>${Scene.Province}</b>:`,
@@ -31,7 +31,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     return ctx.wizard.next();
   },
   (ctx, done) => {
-    const state = ctx.wizard.state as IWizardState;
+    const state = ctx.wizard.state as IState;
     const message = ctx.message as Message.TextMessage;
     const province = message.text as Province;
 

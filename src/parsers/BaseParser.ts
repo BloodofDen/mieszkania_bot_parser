@@ -1,7 +1,7 @@
 import { IAdvertisement, ICriteria } from '../models';
 
 export abstract class BaseParser {
-  protected url: URL;
+  protected readonly url: URL;
 
   constructor(
     protected criteria: ICriteria,

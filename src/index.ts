@@ -1,8 +1,10 @@
 import * as dotenv from 'dotenv';
 import { connect } from 'mongoose';
 import { Telegraf, Scenes, session } from 'telegraf';
+import { userController } from './controllers';
 import { scenes } from './scenes';
-import { Scene, IWizardState } from './models';
+import { Store } from './store';
+import { Scene, IState } from './models';
 
 dotenv.config();
 
@@ -11,7 +13,6 @@ const {
   MONGODB_PASSWORD,
   NODE_ENV,
   BOT_TOKEN,
-  DEFAULT_PARSING_FREQUENCY = 0.5,
 } = process.env;
 
 connect(`mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q.mongodb.net/${NODE_ENV}?retryWrites=true&w=majority`)
@@ -21,14 +22,20 @@ connect(`mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q
     const bot = new Telegraf<Scenes.WizardContext>(BOT_TOKEN!);
     const stage = new Scenes.Stage(scenes);
 
+    const store = new Store(bot);
+    await store.setup(
+      await userController.getUsers(),
+    );
+
     bot.use(session());
     bot.use(stage.middleware());
-    bot.start(({ from: user, scene }) => {
-      const initialState: IWizardState = {
+    bot.start(async ({ from: user, scene }) => {
+      const initialState: IState = {
         user,
         criteria: {
           isPrivate: false,
         },
+        store,
       };
 
       scene.enter(Scene.Province, initialState);
@@ -45,33 +52,5 @@ connect(`mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q
     // Enable graceful stop
     process.once('SIGINT', () => bot.stop('SIGINT'));
     process.once('SIGTERM', () => bot.stop('SIGTERM'));
-
-    // setInterval(
-    //   async () => {
-    //     const activeUsersIds = await getActiveUsersIds();
-
-    //     if (!activeUsersIds.length) {
-    //       return;
-    //     }
-
-    //     const ads = (
-    //       await Promise.all([parseOLX()])
-    //       // await Promise.all([parseOLX(), parseOTODOM()])
-    //     ).flat();
-
-    //     console.log('ads::::', ads);
-
-    //     // const diff = _.differenceWith(links, fileData.split('\n'), _.isEqual);
-    //     // if (!diff.length) {
-    //     //   return;
-    //     // }
-
-    //     // const message = diff.join('\n\n');
-    //     // console.log('New Message:', message);
-
-    //     // Promise.all([...CHATS.keys()].map((chat) => bot.telegram.sendMessage(chat, message)));
-    //   },
-    //   Number(DEFAULT_PARSING_FREQUENCY) * 60000,
-    // );
   })
   .catch(err => console.error('Error:::', err));

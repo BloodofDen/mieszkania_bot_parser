@@ -1,6 +1,6 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
-import { Scene, BlitzResponse, IWizardState, City } from '../models';
+import { Scene, BlitzResponse, IState, City } from '../models';
 import { PROVINCE_TO_CITY_MAPPER } from '../constants';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
 
@@ -12,7 +12,7 @@ const TEXT = {
 const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
   getFirstSceneInlineQuestion(TEXT.WANNA_SPECIFY),
   async (ctx, done) => {
-    const { criteria } = ctx.wizard.state as IWizardState;
+    const { criteria } = ctx.wizard.state as IState;
     const callbackQuery = ctx.callbackQuery as CallbackQuery.DataCallbackQuery;
     const inlineResponse = callbackQuery.data as BlitzResponse;
 
@@ -36,7 +36,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     return ctx.wizard.next();
   },
   (ctx, done) => {
-    const state = ctx.wizard.state as IWizardState;
+    const state = ctx.wizard.state as IState;
     const message = ctx.message as Message.TextMessage;
     const city = message.text as City;
 

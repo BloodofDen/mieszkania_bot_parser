@@ -1,6 +1,6 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
-import { Scene, BlitzResponse, IWizardState } from '../models';
+import { Scene, BlitzResponse, IState } from '../models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
 
 const TEXT = {
@@ -33,7 +33,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     return ctx.wizard.next();
   },
   async (ctx) => {
-    const state = ctx.wizard.state as IWizardState
+    const state = ctx.wizard.state as IState
     const message = ctx.message as Message.TextMessage;
     const valueMinStr = message.text;
 
@@ -57,7 +57,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     return ctx.wizard.next();
   },
   async (ctx, done) => {
-    const state = ctx.wizard.state as IWizardState;
+    const state = ctx.wizard.state as IState;
     const minFieldNameValue = state.criteria.priceMin;
     const message = ctx.message as Message.TextMessage;
     const valueMaxStr = message.text;

@@ -1,6 +1,8 @@
+import { isEqual } from 'lodash';
 import { Scenes } from 'telegraf';
 import { Scene, IState } from '../models';
 import { userController } from '../controllers';
+import { mapTelegramUserToUser } from '../mappers';
 import { createProvinceScene } from './province.scene';
 import { createCityScene } from './city.scene';
 import { createRoomsNumberScene } from './roomsNumber.scene';
@@ -19,13 +21,18 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
   createAreaScene(() => Scene.Price),
   createPriceScene(() => Scene.Private),
   createPrivateScene(async (ctx) => {
-    const { user, criteria, store } = ctx.wizard.state as IState;
-    const upsertedUser = await userController.upsertUser(user, criteria);
+    const { user: telegramUser, criteria, store } = ctx.wizard.state as IState;
+    const user = mapTelegramUserToUser(telegramUser, criteria);
+    const userInStore = store.users.get(user.telegramId);
 
-    if (upsertedUser) {
-      await store.add(upsertedUser);
+    if (isEqual(user, userInStore)) {
+      await ctx.reply(`Complete same settings were provided!`);
+
+      return;
     }
 
-    await ctx.reply(`From: 'createPrivateScene'. Thanks! Bye!`);
+    await userController.upsertUser(user);
+    await store.add(user);
+    await ctx.reply(`Your settings have been saved!`);
   }),
 ];

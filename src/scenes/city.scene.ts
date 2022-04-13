@@ -1,7 +1,7 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
 import { Scene, BlitzResponse, IState, City } from '../models';
-import { PROVINCE_TO_CITY_MAPPER } from '../constants';
+import { PROVINCE_TO_CITY_MAPPER } from '../mappers';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
 
 const TEXT = {

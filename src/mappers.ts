@@ -1,4 +1,22 @@
-import { Province, City } from '../models';
+import type { User as ITelegramUser } from 'typegram';
+import { Province, City, IUser, ICriteria } from './models';
+
+export const mapTelegramUserToUser = (
+  telegramUser: ITelegramUser,
+  criteria: ICriteria,
+): IUser => {
+  const newUser: IUser = {
+    telegramId: telegramUser.id,
+    isBot: telegramUser.is_bot,
+    firstName: telegramUser.first_name,
+    lastName: telegramUser.last_name,
+    nickname: telegramUser.username,
+    languageCode: telegramUser.language_code,
+    criteria,
+  };
+
+  return newUser;
+};
 
 export const PROVINCE_TO_CITY_MAPPER: {
   [key in Province]: City[];

@@ -40,6 +40,7 @@ connect(`mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q
 
       scene.enter(Scene.Province, initialState);
     });
+    bot.command('stop', (ctx) => store.remove(ctx.from.id));
     bot.launch();
 
     // bot.command('quit', (ctx) => {

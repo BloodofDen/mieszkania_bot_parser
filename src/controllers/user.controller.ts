@@ -18,25 +18,16 @@ export const upsertUser = (
   };
 
   try {
-    // const {
-    //   lastErrorObject: {
-    //     updatedExisting,
-    //     upserted,
-    //   } = {},
-    // } = await
     return User.findOneAndUpdate(
       { telegramId: newUser.telegramId },
       newUser,
       {
         new: true,
-        // rawResult: true,
         upsert: true,
       },
     );
-
-    // return !updatedExisting && Boolean(upserted);
   } catch (err) {
-    console.error('Error while saving upserting user:::', err);
+    console.error('Error while upsertUser:::', err);
     return;
   }
 }
@@ -45,7 +36,7 @@ export const getUsers = (): Query<IUserDocument[], IUserDocument> | never[] => {
   try {
     return User.find({});
   } catch (err) {
-    console.error('Error while saving upserting user:::', err);
+    console.error('Error while getUsers:::', err);
     return [];
   }
 }

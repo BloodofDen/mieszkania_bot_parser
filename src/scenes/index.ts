@@ -23,7 +23,7 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
     const upsertedUser = await userController.upsertUser(user, criteria);
 
     if (upsertedUser) {
-      store.add(upsertedUser);
+      await store.add(upsertedUser);
     }
 
     await ctx.reply(`From: 'createPrivateScene'. Thanks! Bye!`);

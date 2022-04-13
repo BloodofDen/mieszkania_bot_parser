@@ -28,13 +28,20 @@ export class Store {
       users.map(user => [user.telegramId, user]),
     );
     this.#timers = new Map(
-      users.map(user => [
-        user.telegramId,
-        setInterval(this.callback.bind(this), this.#parsingFrequency, user),
-      ]),
+      users.map(
+        user => [
+          user.telegramId, setInterval(
+            this.callback.bind(this),
+            this.#parsingFrequency,
+            user,
+          ),
+        ],
+      ),
     );
     this.#parsers = new Map(
-      users.map(user => [user.telegramId, new Parser(user.criteria)]),
+      users.map(
+        user => [user.telegramId, new Parser(user.criteria)],
+      ),
     );
 
     const advertisements = await Promise.all(
@@ -45,20 +52,24 @@ export class Store {
 
     this.#advertisements = new Map(
       users.map(
-        (user, i) => [
-          user.telegramId,
-          new Set(advertisements[i]),
-        ],
+        (user, i) => [user.telegramId, new Set(advertisements[i])],
       ),
     )
   }
 
-  add(user: IUser): void {
+  async add(user: IUser): Promise<void> {
     this.#users.set(user.telegramId, user);
-    this.#timers.set(
-      user.telegramId,
-      setInterval(this.callback.bind(this), this.#parsingFrequency, user),
-    );
+    this.#timers.set(user.telegramId, setInterval(
+      this.callback.bind(this),
+      this.#parsingFrequency,
+      user,
+    ));
+
+    const parser = new Parser(user.criteria);
+    this.#parsers.set(user.telegramId, parser);
+
+    const advertisements = await parser.parse();
+    this.#advertisements.set(user.telegramId, new Set(advertisements));
   }
 
   remove(telegramId: IUser['telegramId']): void {
@@ -67,6 +78,8 @@ export class Store {
 
     this.#users.delete(telegramId);
     this.#timers.delete(telegramId);
+    this.#parsers.delete(telegramId);
+    this.#advertisements.delete(telegramId);
   }
 
   private async callback(

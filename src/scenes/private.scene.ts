@@ -1,10 +1,11 @@
 import type { Message } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
-import { Scene, BlitzResponse, IState } from '../models';
+import type { IState } from '../models';
+import { Scene, BlitzResponse } from './models';
 import { wizardSceneFactory } from './utils';
 
 const TEXT = {
-  SHOULD_BE_PRIVATE: `Is advertisement should be <b>${Scene.Private}</b>?`,
+  SHOULD_BE_PRIVATE: `Should advertisements be <b>${Scene.Private}</b>?`,
 };
 
 const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [

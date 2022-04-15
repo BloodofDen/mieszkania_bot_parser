@@ -1,10 +1,12 @@
 import * as dotenv from 'dotenv';
 import { connect } from 'mongoose';
 import { Telegraf, Scenes, session } from 'telegraf';
-import { userController } from './controllers';
+import { Controller } from './controllers';
 import { scenes } from './scenes';
 import { Store } from './store';
-import { Scene, IState } from './models';
+import type { IState, StoreCallback } from './models';
+import { Scene } from './scenes/models';
+import { createStoreCallback, stopBot } from './utils';
 
 dotenv.config();
 
@@ -22,14 +24,17 @@ connect(`mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q
     const bot = new Telegraf<Scenes.WizardContext>(BOT_TOKEN!);
     const stage = new Scenes.Stage(scenes);
 
-    const store = new Store(bot);
-    await store.setup(
-      await userController.getUsers(),
-    );
+    const controller = new Controller();
+    const users = await controller.user.getUsers();
+
+    const storeCallback: StoreCallback = createStoreCallback(bot);
+
+    const store = new Store(storeCallback);
+    await store.setup(users);
 
     bot.use(session());
     bot.use(stage.middleware());
-    bot.start(async ({ from: user, scene }) => {
+    bot.start(({ from: user, scene }) => {
       const initialState: IState = {
         user,
         criteria: {
@@ -40,7 +45,7 @@ connect(`mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q
 
       scene.enter(Scene.Province, initialState);
     });
-    bot.command('stop', (ctx) => store.remove(ctx.from.id));
+    // bot.command('stop', (ctx) => store.remove(ctx.from.id));
     bot.launch();
 
     // bot.command('quit', (ctx) => {
@@ -51,7 +56,8 @@ connect(`mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q
     // });
 
     // Enable graceful stop
-    process.once('SIGINT', () => bot.stop('SIGINT'));
-    process.once('SIGTERM', () => bot.stop('SIGTERM'));
+    // ctrl + c event:
+    process.once('SIGINT', stopBot(bot, store, 'SIGINT'));
+    process.once('SIGTERM', stopBot(bot, store, 'SIGTERM'));
   })
   .catch(err => console.error('Error:::', err));

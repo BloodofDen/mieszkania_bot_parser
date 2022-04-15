@@ -1,5 +1,6 @@
 import type { User as ITelegramUser } from 'typegram';
-import { Province, City, IUser, ICriteria } from './models';
+import { IUser, ICriteria } from '../models';
+import { Province, City } from './models';
 
 export const mapTelegramUserToUser = (
   telegramUser: ITelegramUser,

@@ -1,14 +1,17 @@
 import { isEqual } from 'lodash';
 import { Scenes } from 'telegraf';
-import { Scene, IState } from '../models';
-import { userController } from '../controllers';
-import { mapTelegramUserToUser } from '../mappers';
+import { Controller } from '../controllers';
+import type { IState } from '../models';
+import { Scene } from './models';
+import { mapTelegramUserToUser } from './mappers';
 import { createProvinceScene } from './province.scene';
 import { createCityScene } from './city.scene';
 import { createRoomsNumberScene } from './roomsNumber.scene';
 import { createAreaScene } from './area.scene';
 import { createPriceScene } from './price.scene';
 import { createPrivateScene } from './private.scene';
+
+const controller = new Controller();
 
 export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
   createProvinceScene((ctx) => {
@@ -31,8 +34,9 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
       return;
     }
 
-    await userController.upsertUser(user);
+    await controller.user.upsertUser(user);
     await store.add(user);
-    await ctx.reply(`Your settings have been saved!`);
+
+    await ctx.reply(`Your settings have been saved! Please wait when new ads come up.`);
   }),
 ];

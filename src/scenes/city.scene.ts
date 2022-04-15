@@ -1,8 +1,9 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
-import { Scene, BlitzResponse, IState, City } from '../models';
-import { PROVINCE_TO_CITY_MAPPER } from '../mappers';
+import type { IState } from '../models';
+import { Scene, BlitzResponse, City } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
+import { PROVINCE_TO_CITY_MAPPER } from './mappers';
 
 const TEXT = {
   PLEASE_SELECT: `Please select <b>${Scene.City}</b>:`,
@@ -30,7 +31,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
       Markup.keyboard(
         PROVINCE_TO_CITY_MAPPER[criteria.province!],
         { columns: 1 },
-      ).oneTime(),
+      ).oneTime().resize(),
     );
 
     return ctx.wizard.next();

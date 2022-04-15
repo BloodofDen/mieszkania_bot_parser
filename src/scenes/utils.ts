@@ -1,5 +1,5 @@
 import { Scenes, Markup, MiddlewareFn } from 'telegraf';
-import { Scene, BlitzResponse } from '../models'
+import { Scene, BlitzResponse } from './models';
 
 const unwrapCallback = async (
   ctx: Scenes.WizardContext,
@@ -55,8 +55,8 @@ export const getFirstSceneInlineQuestion = (text: string): MiddlewareFn<Scenes.W
     await ctx.replyWithHTML(
       text,
       Markup.inlineKeyboard([
-        Markup.button.callback('✅ Yes', BlitzResponse.Yes),
-        Markup.button.callback('❌ No', BlitzResponse.No),
+        Markup.button.callback('✅Yes', BlitzResponse.Yes),
+        Markup.button.callback('❌No', BlitzResponse.No),
       ]),
     );
 

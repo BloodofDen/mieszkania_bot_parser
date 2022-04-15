@@ -1,10 +1,11 @@
-import { IAdvertisement, ICriteria } from '../models';
+import type { ICriteria, IAdvertisement } from '../models';
 
 export abstract class BaseParser {
   protected readonly url: URL;
 
   constructor(
     protected criteria: ICriteria,
+    protected maxAdsLimit: number,
     protected origin: URL['origin'],
     protected pathname: URL['pathname'],
   ) {

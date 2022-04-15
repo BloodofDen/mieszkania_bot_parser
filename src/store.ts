@@ -1,6 +1,4 @@
-import { isEqual, differenceWith } from 'lodash';
-import { Telegraf, Scenes, Markup } from 'telegraf';
-import { IUser, IAdvertisement } from './models';
+import type { IUser, IAdvertisement, StoreCallback } from './models';
 import { Parser } from './parsers';
 
 const {
@@ -10,7 +8,7 @@ const {
 export class Store {
   readonly #parsingFrequency = Number(DEFAULT_PARSING_FREQUENCY) * 60000;
 
-  readonly #bot: Telegraf<Scenes.WizardContext>;
+  readonly #callback: StoreCallback;
 
   users = new Map<IUser['telegramId'], IUser>();
 
@@ -20,8 +18,8 @@ export class Store {
 
   #timers = new Map<IUser['telegramId'], NodeJS.Timer>();
 
-  constructor(bot: Telegraf<Scenes.WizardContext>) {
-    this.#bot = bot;
+  constructor(callback: StoreCallback) {
+    this.#callback = callback;
   }
 
   async setup(users: IUser[]): Promise<void> {
@@ -52,9 +50,11 @@ export class Store {
       users.map(
         user => [
           user.telegramId, setInterval(
-            this.callback.bind(this),
+            this.#callback,
             this.#parsingFrequency,
-            user,
+            user.telegramId,
+            this.#parsers.get(user.telegramId)!,
+            this.#advertisements.get(user.telegramId)!,
           ),
         ],
       ),
@@ -64,6 +64,8 @@ export class Store {
   }
 
   async add(user: IUser): Promise<void> {
+    const shouldUpdateUser = this.users.has(user.telegramId);
+
     this.users.set(user.telegramId, user);
 
     const parser = new Parser(user.criteria);
@@ -72,18 +74,20 @@ export class Store {
     const advertisements = await parser.parse();
     this.#advertisements.set(user.telegramId, new Set(advertisements));
 
-    if (!this.users.has(user.telegramId)) {
-      this.#timers.set(user.telegramId, setInterval(
-        this.callback.bind(this),
-        this.#parsingFrequency,
-        user,
-      ));
-
-      console.log(`User with id = '${user.telegramId}' was added`);
+    if (shouldUpdateUser) {
+      console.log(`User with id = '${user.telegramId}' was updated`);
       return;
     }
 
-    console.log(`User with id = '${user.telegramId}' was updated`);
+    this.#timers.set(user.telegramId, setInterval(
+      this.#callback,
+      this.#parsingFrequency,
+      user.telegramId,
+      this.#parsers.get(user.telegramId)!,
+      this.#advertisements.get(user.telegramId)!,
+    ));
+
+    console.log(`User with id = '${user.telegramId}' was added`);
   }
 
   remove(telegramId: IUser['telegramId']): void {
@@ -97,43 +101,4 @@ export class Store {
 
     console.log(`User with id = '${telegramId}' was removed`);
   }
-
-  private async callback(user: IUser): Promise<void> {
-    const advertisements = await this.#parsers.get(user.telegramId)!.parse();
-    const advertisementsInStore = this.#advertisements.get(user.telegramId);
-    const diffs = differenceWith(advertisements, Array.from(advertisementsInStore!), isEqual);
-
-    if (!diffs.length) {
-      console.log(`Diffs weren't found`);
-      return;
-    }
-
-    console.log(`Diffs found!`);
-
-    const sendMessagePromises = diffs.map(
-      diff => {
-        const sentences = [
-          `<b>${diff.title}</b>`,
-          `Address: <b>${diff.address}</b>`,
-          diff.area ? `Area: <b>${diff.area}</b>` : '',
-          `Price: <b>${diff.price}</b>`,
-        ];
-        const message = sentences.filter(Boolean).join('\n');
-
-        return this.#bot.telegram.sendMessage(
-          user.telegramId,
-          message,
-          {
-            parse_mode: 'HTML',
-            // reply_markup:
-            ...Markup.inlineKeyboard([
-              Markup.button.url(`Link to ${diff.source}`, diff.link),
-            ]),
-          },
-        );
-      },
-    );
-
-    await Promise.all(sendMessagePromises);
-  };
 }

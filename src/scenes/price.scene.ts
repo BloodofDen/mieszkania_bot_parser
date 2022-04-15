@@ -1,13 +1,14 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
-import { Scene, BlitzResponse, IState } from '../models';
+import type { IState } from '../models';
+import { Scene, BlitzResponse } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
 
 const TEXT = {
-  PLEASE_SPECIFY_MIN: `Please specify min <b>${Scene.Price} in PLN</b>:`,
-  PLEASE_SPECIFY_MAX: `Please specify max <b>${Scene.Price} in PLN</b>:`,
-  WANNA_SPECIFY: `Do you want to specify <b>${Scene.Price} in PLN</b>?`,
-  MAX_CANT_BE_LESS_THAN_MIN: `Max <b>${Scene.Price} in PLN</b> can't be less that min!`,
+  PLEASE_SPECIFY_MIN: `Please specify min <b>${Scene.Price}</b> (in PLN):`,
+  PLEASE_SPECIFY_MAX: `Please specify max <b>${Scene.Price}</b> (in PLN):`,
+  WANNA_SPECIFY: `Do you want to specify <b>${Scene.Price}</b>?`,
+  MAX_CANT_BE_LESS_THAN_MIN: `Max <b>${Scene.Price}</b> can't be less that min!`,
 };
 
 const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [

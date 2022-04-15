@@ -1,6 +1,7 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
-import { Scene, BlitzResponse, IState, RoomsNumber } from '../models';
+import type { IState } from '../models';
+import { Scene, BlitzResponse, RoomsNumber } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
 
 const TEXT = {

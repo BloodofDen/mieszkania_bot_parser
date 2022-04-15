@@ -1,12 +1,14 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
-import { IAdvertisement, AdvertisementSource, ICriteria, RoomsNumber } from '../models';
+import { ICriteria, IAdvertisement, AdvertisementSource } from '../models';
+import { RoomsNumber } from '../scenes/models';
 import { BaseParser } from './BaseParser';
 
 export class OlxParser extends BaseParser {
-  constructor(criteria: ICriteria) {
+  constructor(criteria: ICriteria, maxAdsLimit: number) {
     super(
       criteria,
+      maxAdsLimit,
       'https://www.olx.pl',
       'nieruchomosci/mieszkania/wynajem/',
     );
@@ -42,8 +44,8 @@ export class OlxParser extends BaseParser {
   async parse(): Promise<IAdvertisement[]> {
     const { data } = await axios.get(this.url.toString());
     const $ = cheerio.load(data);
-    const ads = $(`#offers_table .offer table`).map(
-      (_, table) => {
+    const ads = $(`#offers_table .offer table`)
+      .map((_, table) => {
         const a = $(table).find('.title-cell a');
         const title = a.text().trim();
         const link = a.attr('href');
@@ -61,8 +63,9 @@ export class OlxParser extends BaseParser {
           price,
           source: AdvertisementSource.Olx,
         } as IAdvertisement;
-      },
-    ).toArray();
+      })
+      .toArray()
+      .slice(0, this.maxAdsLimit);
 
     return ads;
   };

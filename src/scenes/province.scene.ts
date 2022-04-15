@@ -1,6 +1,7 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
-import { Scene, BlitzResponse, IState, Province } from '../models';
+import type { IState } from '../models';
+import { Scene, BlitzResponse, Province } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
 
 const TEXT = {
@@ -25,7 +26,10 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
 
     await ctx.replyWithHTML(
       TEXT.PLEASE_SELECT,
-      Markup.keyboard(Object.values(Province), { columns: 1 }).oneTime(),
+      Markup.keyboard(
+        Object.values(Province),
+        { columns: 1 },
+      ).oneTime().resize(),
     );
 
     return ctx.wizard.next();

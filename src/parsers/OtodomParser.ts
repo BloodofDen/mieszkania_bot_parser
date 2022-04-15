@@ -1,20 +1,21 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
-import { IAdvertisement, ICriteria, AdvertisementSource, RoomsNumber } from '../models';
+import { ICriteria, IAdvertisement, AdvertisementSource } from '../models';
+import { RoomsNumber } from '../scenes/models';
 import { BaseParser } from './BaseParser';
 
 export class OtodomParser extends BaseParser {
   readonly #baseSearchParams: Record<string, string> = {
     distanceRadius: '0',
     page: '1',
-    limit: '36',
     market: 'ALL',
     viewType: 'listing',
   };
 
-  constructor(criteria: ICriteria) {
+  constructor(criteria: ICriteria, maxAdsLimit: number) {
     super(
       criteria,
+      maxAdsLimit,
       'https://www.otodom.pl',
       'pl/oferty/wynajem/mieszkanie/',
     );
@@ -25,6 +26,7 @@ export class OtodomParser extends BaseParser {
   protected composeSearchParams(): string {
     const urlSearchParams = new URLSearchParams({
       ...this.#baseSearchParams,
+      limit: this.maxAdsLimit.toString(),
       ...(this.criteria.roomsNumber && {
         roomsNumber: `[${RoomsNumber[this.criteria.roomsNumber]!.toUpperCase()}]`,
       }),
@@ -59,14 +61,16 @@ export class OtodomParser extends BaseParser {
         const a = $(li).find('a');
 
         const article = a.find('article');
-        const articleDivs = article.find('div');
-        const articlePs = article.find('p')
+        const paragraphs = article.find('p');
+        const divs = article.find('div');
+        const header = divs.eq(0).find('h3');
+        const spans = divs.eq(1).find('span');
 
-        const title = articleDivs.first().find('h3').text().trim();
+        const title = header.text().trim();
         const link = this.url.origin + a.attr('href');
-        const area = articleDivs.eq(1).find('p').last().find('span').last().text().trim();
-        const address = articlePs.first().text().trim();
-        const price = articleDivs.eq(1).find('p').first().text().trim();
+        const area = spans.last().text().trim();
+        const address = paragraphs.first().text().trim();
+        const price = spans.first().text().trim();
 
         return {
           title,
@@ -77,7 +81,8 @@ export class OtodomParser extends BaseParser {
           source: AdvertisementSource.Otodom,
         } as IAdvertisement;
       })
-      .toArray();
+      .toArray()
+      .slice(0, this.maxAdsLimit);
 
     return ads;
   };

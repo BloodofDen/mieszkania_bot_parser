@@ -74,9 +74,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     const valueMax = parseInt(valueMaxStr, 10);
 
     if (minFieldNameValue && minFieldNameValue > valueMax) {
-      await ctx.replyWithHTML(TEXT.MAX_CANT_BE_LESS_THAN_MIN);
-
-      return;
+      return ctx.replyWithHTML(TEXT.MAX_CANT_BE_LESS_THAN_MIN);
     }
 
     state.criteria.priceMax = valueMax;

@@ -3,7 +3,7 @@ import { Scene, BlitzResponse } from './models';
 
 const unwrapCallback = async (
   ctx: Scenes.WizardContext,
-  getNextScene: (ctx: Scenes.WizardContext) => Scene | Promise<void>,
+  getNextScene: (ctx: Scenes.WizardContext) => Scene | Promise<Scene | void>,
 ): Promise<void> => {
   const nextSceneId = await Promise.resolve<Scene | void>(getNextScene(ctx));
 
@@ -31,7 +31,7 @@ export const wizardSceneFactory = (
    * @param getNextScene {function} - async func that returns nextSceneType
    */
   return function createWizardScene(
-    getNextScene: (ctx: Scenes.WizardContext) => Scene | Promise<void>,
+    getNextScene: (ctx: Scenes.WizardContext) => Scene | Promise<Scene | void>,
   ) {
     return new Scenes.WizardScene(
       sceneType,

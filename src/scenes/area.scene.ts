@@ -57,7 +57,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
 
     return ctx.wizard.next();
   },
-  async (ctx, done) => {
+  (ctx, done) => {
     const state = ctx.wizard.state as IState;
     const minFieldNameValue = state.criteria.areaMin;
     const message = ctx.message as Message.TextMessage;
@@ -74,9 +74,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     const valueMax = parseInt(valueMaxStr, 10);
 
     if (minFieldNameValue && minFieldNameValue > valueMax) {
-      await ctx.replyWithHTML(TEXT.MAX_CANT_BE_LESS_THAN_MIN);
-
-      return;
+      return ctx.replyWithHTML(TEXT.MAX_CANT_BE_LESS_THAN_MIN);
     }
 
     state.criteria.areaMax = valueMax;

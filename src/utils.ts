@@ -6,10 +6,10 @@ import { Store } from './store';
 
 export const stopBot = (
   bot: Telegraf<Scenes.WizardContext>,
-  _store: Store,
+  store: Store,
   reason: string,
 ) => () => {
-  // store.remove(473161774);
+  store.users.forEach((_value, key) => store.remove(key));
   bot.stop(reason);
 };
 

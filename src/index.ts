@@ -32,6 +32,10 @@ connect(`mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q
     const store = new Store(storeCallback);
     await store.setup(users);
 
+    if (NODE_ENV !== 'production') {
+      bot.use(Telegraf.log());
+    }
+
     bot.use(session());
     bot.use(stage.middleware());
     bot.start(({ from: user, scene }) => {
@@ -43,17 +47,10 @@ connect(`mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q
         store,
       };
 
-      scene.enter(Scene.Initial, initialState);
+      scene.enter(Scene.Province, initialState);
     });
     // bot.command('stop', (ctx) => store.remove(ctx.from.id));
     bot.launch();
-
-    // bot.command('quit', (ctx) => {
-    //   // Explicit usage
-    //   ctx.telegram.leaveChat(ctx.message.chat.id);
-    // // Context shortcut
-    //   ctx.leaveChat();
-    // });
 
     // Enable graceful stop
     // ctrl + c event:

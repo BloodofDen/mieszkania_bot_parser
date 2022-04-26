@@ -1,5 +1,4 @@
 export enum Scene {
-  Initial = 'Initial',
   Province = 'Province',
   City = 'City',
   Area = 'Area',

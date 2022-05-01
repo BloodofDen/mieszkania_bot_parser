@@ -18,14 +18,16 @@ export const createStoreCallback = (
 ): StoreCallback => async (
   userTelegramId: IUser['telegramId'],
   parser: Parser,
-  advertisements: Set<IAdvertisement>,
+  advertisements: IAdvertisement[],
 ): Promise<void> => {
   const parsedAdvertisements = await parser.parse();
-  const diffAds = differenceWith(parsedAdvertisements, Array.from(advertisements), isEqual);
+  const diffAds = differenceWith(parsedAdvertisements, advertisements, isEqual);
 
   if (!diffAds.length) {
     return;
   }
+
+  advertisements.unshift(...diffAds);
 
   const sendMessagePromises = diffAds.map(
     (ad, i) => {

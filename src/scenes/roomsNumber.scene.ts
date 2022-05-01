@@ -3,6 +3,9 @@ import { Markup, Scenes, MiddlewareFn } from 'telegraf';
 import type { IState } from '../models';
 import { Scene, BlitzResponse, RoomsNumber } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
+import { LEAVE_BLANK, VALIDATOR } from './constants';
+
+const { REG_EXP, ERROR_MESSAGE } = VALIDATOR[Scene.RoomsNumber];
 
 const TEXT = {
   PLEASE_SPECIFY: `Please specify <b>${Scene.RoomsNumber}</b>:`,
@@ -28,7 +31,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
       TEXT.PLEASE_SPECIFY,
       Markup.keyboard([
         Object.keys(RoomsNumber).filter(key => Number(key)),
-        ['Leave Blank'],
+        [LEAVE_BLANK],
       ]).oneTime().resize(),
     );
 
@@ -39,12 +42,12 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     const message = ctx.message as Message.TextMessage;
     const roomsNumberStr = message.text;
 
-    if (roomsNumberStr === 'Leave Blank') {
+    if (roomsNumberStr === LEAVE_BLANK) {
       return done();
     }
 
-    if (!roomsNumberStr.match(/^[0-4]$/)) {
-      return;
+    if (!roomsNumberStr.match(REG_EXP!)) {
+      return ctx.replyWithHTML(ERROR_MESSAGE);
     }
 
     const roomsNumber = parseInt(roomsNumberStr, 10);

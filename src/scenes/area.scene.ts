@@ -3,6 +3,9 @@ import { Markup, Scenes, MiddlewareFn } from 'telegraf';
 import type { IState } from '../models';
 import { Scene, BlitzResponse } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
+import { LEAVE_BLANK, VALIDATOR } from './constants';
+
+const { REG_EXP, ERROR_MESSAGE } = VALIDATOR[Scene.Area];
 
 const TEXT = {
   PLEASE_SPECIFY_MIN: `Please specify min <b>${Scene.Area} m²</b>:`,
@@ -28,7 +31,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
 
     await ctx.replyWithHTML(
       TEXT.PLEASE_SPECIFY_MIN,
-      Markup.keyboard(['Leave Blank']).oneTime().resize(),
+      Markup.keyboard([LEAVE_BLANK]).oneTime().resize(),
     );
 
     return ctx.wizard.next();
@@ -37,22 +40,21 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     const state = ctx.wizard.state as IState
     const message = ctx.message as Message.TextMessage;
     const valueMinStr = message.text;
+    const isInputValid = valueMinStr.match(REG_EXP!);
 
-    if (valueMinStr === 'Leave Blank') {
-      return ctx.wizard.next();
+    if (valueMinStr !== LEAVE_BLANK && !isInputValid) {
+      return ctx.replyWithHTML(ERROR_MESSAGE);
     }
 
-    if (!valueMinStr.match(/^[0-9]*\.?[0-9]*$/)) {
-      return;
+    if (isInputValid) {
+      const valueMin = parseInt(valueMinStr, 10);
+
+      state.criteria.areaMin = valueMin;
     }
-
-    const valueMin = parseInt(valueMinStr, 10);
-
-    state.criteria.areaMin = valueMin;
 
     await ctx.replyWithHTML(
       TEXT.PLEASE_SPECIFY_MAX,
-      Markup.keyboard(['Leave Blank']).oneTime().resize(),
+      Markup.keyboard([LEAVE_BLANK]).oneTime().resize(),
     );
 
     return ctx.wizard.next();
@@ -63,12 +65,13 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     const message = ctx.message as Message.TextMessage;
     const valueMaxStr = message.text;
 
-    if (valueMaxStr === 'Leave Blank') {
+    if (valueMaxStr === LEAVE_BLANK) {
       return done();
     }
 
-    if (!valueMaxStr.match(/^[0-9]*\.?[0-9]*$/)) {
-      return;
+    const isInputValid = valueMaxStr.match(REG_EXP!);
+    if (!isInputValid) {
+      return ctx.replyWithHTML(ERROR_MESSAGE);
     }
 
     const valueMax = parseInt(valueMaxStr, 10);

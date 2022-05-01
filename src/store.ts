@@ -14,7 +14,7 @@ export class Store {
 
   #parsers = new Map<IUser['telegramId'], Parser>();
 
-  #advertisements = new Map<IUser['telegramId'], Set<IAdvertisement>>();
+  #advertisements = new Map<IUser['telegramId'], IAdvertisement[]>();
 
   #timers = new Map<IUser['telegramId'], NodeJS.Timer>();
 
@@ -23,48 +23,27 @@ export class Store {
   }
 
   async setup(users: IUser[]): Promise<void> {
-    this.users = new Map(
-      users.map(
-        user => [user.telegramId, user],
-      ),
-    );
-    this.#parsers = new Map(
-      users.map(
-        user => [user.telegramId, new Parser(user.criteria)],
-      ),
-    );
+    await Promise.all(users.map(user => this.add(user)));
 
-    const advertisements = await Promise.all(
-      users.map(
-        user => this.#parsers.get(user.telegramId)!.parse(),
-      ),
-    );
-
-    this.#advertisements = new Map(
-      users.map(
-        (user, i) => [user.telegramId, new Set(advertisements[i])],
-      ),
-    )
-
-    this.#timers = new Map(
-      users.map(
-        user => [
-          user.telegramId, setInterval(
-            this.#callback,
-            this.#parsingFrequency,
-            user.telegramId,
-            this.#parsers.get(user.telegramId)!,
-            this.#advertisements.get(user.telegramId)!,
-          ),
-        ],
-      ),
-    );
-
-    console.log(`Store was successfully set up`);
+    console.log(`Store successfully set up`);
   }
 
   async add(user: IUser): Promise<void> {
-    const shouldUpdateUser = this.users.has(user.telegramId);
+    this.users.set(user.telegramId, user);
+
+    const parser = new Parser(user.criteria);
+    this.#parsers.set(user.telegramId, parser);
+
+    const advertisements = await parser.parse();
+    this.#advertisements.set(user.telegramId, advertisements);
+
+    this.setTimer(user.telegramId, parser, advertisements);
+
+    console.log(`User with id = '${user.telegramId}' was added`);
+  }
+
+  async update(user: IUser): Promise<void> {
+    this.removeTimer(user.telegramId);
 
     this.users.set(user.telegramId, user);
 
@@ -72,33 +51,44 @@ export class Store {
     this.#parsers.set(user.telegramId, parser);
 
     const advertisements = await parser.parse();
-    this.#advertisements.set(user.telegramId, new Set(advertisements));
+    this.#advertisements.set(user.telegramId, advertisements);
 
-    if (shouldUpdateUser) {
-      console.log(`User with id = '${user.telegramId}' was updated`);
-      return;
-    }
+    this.setTimer(user.telegramId, parser, advertisements);
 
-    this.#timers.set(user.telegramId, setInterval(
-      this.#callback,
-      this.#parsingFrequency,
-      user.telegramId,
-      this.#parsers.get(user.telegramId)!,
-      this.#advertisements.get(user.telegramId)!,
-    ));
-
-    console.log(`User with id = '${user.telegramId}' was added`);
+    console.log(`User with id = '${user.telegramId}' was updated`);
   }
 
   remove(telegramId: IUser['telegramId']): void {
-    const intervalId = this.#timers.get(telegramId);
-    clearInterval(intervalId!);
+    this.removeTimer(telegramId);
 
     this.users.delete(telegramId);
     this.#parsers.delete(telegramId);
     this.#advertisements.delete(telegramId);
-    this.#timers.delete(telegramId);
 
     console.log(`User with id = '${telegramId}' was removed`);
+  }
+
+  removeTimer(telegramId: IUser['telegramId']): void {
+    const intervalId = this.#timers.get(telegramId);
+    clearInterval(intervalId!);
+    this.#timers.delete(telegramId);
+
+    console.log(`Timer was removed for user with id = '${telegramId}'`);
+  }
+
+  setTimer(
+    telegramId: IUser['telegramId'],
+    parser?: Parser,
+    advertisements?: IAdvertisement[],
+  ): void {
+    this.#timers.set(telegramId, setInterval(
+      this.#callback,
+      this.#parsingFrequency,
+      telegramId,
+      parser ?? this.#parsers.get(telegramId)!,
+      advertisements ?? this.#advertisements.get(telegramId)!,
+    ));
+
+    console.log(`Timer was set for user with id = '${telegramId}'`);
   }
 }

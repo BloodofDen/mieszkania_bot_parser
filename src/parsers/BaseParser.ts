@@ -1,3 +1,4 @@
+import { deburr } from 'lodash';
 import type { ICriteria, IAdvertisement } from '../models';
 
 export abstract class BaseParser {
@@ -10,9 +11,7 @@ export abstract class BaseParser {
     protected pathname: URL['pathname'],
   ) {
     const baseUrl = new URL(pathname, origin);
-    const subPath = this.excludeAccents(
-      criteria.city ?? criteria.province,
-    ).toLowerCase();
+    const subPath = deburr(criteria.city ?? criteria.province).toLowerCase();
 
     this.url = new URL(subPath, baseUrl);
   }
@@ -20,8 +19,4 @@ export abstract class BaseParser {
   protected abstract composeSearchParams(): string;
 
   abstract parse(): Promise<IAdvertisement[]>;
-
-  private excludeAccents(str: string = ''): string {
-    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  };
 }

@@ -65,6 +65,7 @@ export class OlxParser extends BaseParser {
         } as IAdvertisement;
       })
       .toArray()
+      .filter((ad, i, ads) => ads.indexOf(ad) === i)
       .slice(0, this.maxAdsLimit);
 
     return ads;

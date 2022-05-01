@@ -8,7 +8,7 @@ import { Store } from './store';
 export type StoreCallback = (
   userTelegramId: IUser['telegramId'],
   parser: Parser,
-  advertisements: Set<IAdvertisement>,
+  advertisements: IAdvertisement[],
 ) => Promise<void>;
 
 export interface IState {
@@ -20,7 +20,7 @@ export interface IState {
 export enum AdvertisementSource {
   Olx = 'Olx',
   Otodom = 'Otodom',
-}
+};
 
 export interface IAdvertisement {
   title: string;

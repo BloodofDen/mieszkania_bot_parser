@@ -4,6 +4,9 @@ import type { IState } from '../models';
 import { Scene, BlitzResponse, City } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
 import { PROVINCE_TO_CITY_MAPPER } from './mappers';
+import { VALIDATOR } from './constants';
+
+const { ERROR_MESSAGE } = VALIDATOR[Scene.City];
 
 const TEXT = {
   PLEASE_SELECT: `Please select <b>${Scene.City}</b>:`,
@@ -40,6 +43,10 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     const state = ctx.wizard.state as IState;
     const message = ctx.message as Message.TextMessage;
     const city = message.text as City;
+
+    if (!Object.values(City).includes(city)) {
+      return ctx.replyWithHTML(ERROR_MESSAGE);
+    }
 
     state.criteria.city = city;
     return done();

@@ -4,6 +4,9 @@ import { Markup, Scenes, MiddlewareFn } from 'telegraf';
 import type { IState } from '../models';
 import { Scene, Province, City } from './models';
 import { wizardSceneFactory } from './utils';
+import { VALIDATOR } from './constants';
+
+const { ERROR_MESSAGE } = VALIDATOR[Scene.Province];
 
 const TEXT = {
   HOW_PROVIDE_DETAILS: `How would you like to provide Province/City details?`,
@@ -32,10 +35,6 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     const text = (<Message.TextMessage>ctx.message)?.text as string;
     const location = (<Message.LocationMessage>ctx.message)?.location as Location;
 
-    if (text === TEXT.DONT_PROVIDE) {
-      return done();
-    }
-
     if (location) {
       const url = new URL(`https://nominatim.openstreetmap.org/reverse?lon=${location.longitude}&lat=${location.latitude}&format=json`);
       const { data: { address: { city } } } = await axios(url.toString());
@@ -49,20 +48,31 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
       return done();
     }
 
-    await ctx.replyWithHTML(
-      TEXT.PLEASE_SELECT,
-      Markup.keyboard(
-        Object.values(Province),
-        { columns: 1 },
-      ).oneTime().resize(),
-    );
+    switch (text) {
+      case TEXT.DONT_PROVIDE:
+        return done();
+      case TEXT.PROVIDE_FROM_LIST:
+        await ctx.replyWithHTML(
+          TEXT.PLEASE_SELECT,
+          Markup.keyboard(
+            Object.values(Province),
+            { columns: 1 },
+          ).oneTime().resize(),
+        );
 
-    return ctx.wizard.next();
+        return ctx.wizard.next();
+      default:
+        return ctx.replyWithHTML(ERROR_MESSAGE);
+    }
   },
   (ctx, done) => {
     const state = ctx.wizard.state as IState;
     const message = ctx.message as Message.TextMessage;
     const province = message.text as Province;
+
+    if (!Object.values(Province).includes(province)) {
+      return ctx.replyWithHTML(ERROR_MESSAGE);
+    }
 
     state.criteria.province = province;
     return done();

@@ -1,6 +1,7 @@
 import { isEqual } from 'lodash';
 import { Scenes } from 'telegraf';
 import { Controller } from '../controllers';
+import { BotCommand } from '../commands';
 import type { IState } from '../models';
 import { Scene } from './models';
 import { mapTelegramUserToUser } from './mappers';
@@ -13,11 +14,21 @@ import { createPrivateScene } from './private.scene';
 
 const controller = new Controller();
 
+const TEXT = {
+  SETTINGS_SAME: `Complete same settings were provided!
+To print current settings criteria: /${BotCommand.Print}
+To see all available commands: /${BotCommand.Help}`,
+  SETTINGS_SAVED: `Your settings have been saved! New ads will come up soon!
+To print current settings criteria: /${BotCommand.Print}
+To see all available commands: /${BotCommand.Help}`,
+};
+
 export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
   createProvinceScene((ctx) => {
     const { criteria } = ctx.wizard.state as IState;
+    const shouldGoToCityScene = criteria.province && !criteria.province;
 
-    return criteria.province ? Scene.City : Scene.RoomsNumber;
+    return shouldGoToCityScene ? Scene.City : Scene.RoomsNumber;
   }),
   createCityScene(() => Scene.RoomsNumber),
   createRoomsNumberScene(() => Scene.Area),
@@ -29,14 +40,19 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
     const userInStore = store.users.get(user.telegramId);
 
     if (isEqual(user, userInStore)) {
-      await ctx.reply(`Complete same settings were provided!`);
+      await ctx.reply(TEXT.SETTINGS_SAME);
 
       return;
     }
 
     await controller.user.upsertUser(user);
-    await store.add(user);
 
-    await ctx.reply(`Your settings have been saved! Please wait when new ads come up.`);
+    if (!userInStore) {
+      await store.add(user);
+    } else {
+      await store.update(user);
+    }
+
+    await ctx.reply(TEXT.SETTINGS_SAVED);
   }),
 ];

@@ -28,6 +28,10 @@ export class Store {
     console.log(`Store successfully set up`);
   }
 
+  get(telegramId: IUser['telegramId']): IUser | undefined {
+    return this.users.get(telegramId);
+  }
+
   async add(user: IUser): Promise<void> {
     this.users.set(user.telegramId, user);
 

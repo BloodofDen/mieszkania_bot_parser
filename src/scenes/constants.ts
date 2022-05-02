@@ -1,5 +1,7 @@
 import { Scene, BlitzResponse } from './models';
 
+export const INLINE_ERROR_MESSAGE = `Please choose <b>${BlitzResponse.Yes}</b> or <b>${BlitzResponse.No}</b> using buttons above`;
+
 export const VALIDATOR: Record<Scene, {
   ERROR_MESSAGE: string,
   REG_EXP?: RegExp,

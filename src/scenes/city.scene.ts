@@ -4,7 +4,7 @@ import type { IState } from '../models';
 import { Scene, BlitzResponse, City } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
 import { PROVINCE_TO_CITY_MAPPER } from './mappers';
-import { VALIDATOR } from './constants';
+import { VALIDATOR, INLINE_ERROR_MESSAGE } from './constants';
 
 const { ERROR_MESSAGE } = VALIDATOR[Scene.City];
 
@@ -18,7 +18,11 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
   async (ctx, done) => {
     const { criteria } = ctx.wizard.state as IState;
     const callbackQuery = ctx.callbackQuery as CallbackQuery.DataCallbackQuery;
-    const inlineResponse = callbackQuery.data as BlitzResponse;
+    const inlineResponse = callbackQuery?.data as BlitzResponse;
+
+    if (!inlineResponse) {
+      return ctx.replyWithHTML(INLINE_ERROR_MESSAGE);
+    }
 
     await ctx.editMessageText(
       `${TEXT.WANNA_SPECIFY}\nChoosen: <b>${inlineResponse}</b>`,

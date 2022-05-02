@@ -44,7 +44,9 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
         Markup.removeKeyboard(),
       );
 
+      delete state.criteria.province;
       state.criteria.city = city;
+
       return done();
     }
 
@@ -75,6 +77,8 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     }
 
     state.criteria.province = province;
+    delete state.criteria.city;
+
     return done();
   },
 ];

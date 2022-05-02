@@ -15,12 +15,12 @@ import { createPrivateScene } from './private.scene';
 const controller = new Controller();
 
 const TEXT = {
-  SETTINGS_SAME: `Complete same settings were provided!
-To print current settings criteria: /${BotCommand.Print}
-To see all available commands: /${BotCommand.Help}`,
-  SETTINGS_SAVED: `Your settings have been saved! New ads will come up soon!
-To print current settings criteria: /${BotCommand.Print}
-To see all available commands: /${BotCommand.Help}`,
+  SETTINGS_SAME: `Complete same settings were provided!\n
+/${BotCommand.Print} - to print current settings criteria
+/${BotCommand.Help} - to see all available commands`,
+  SETTINGS_SAVED: `Your settings have been saved! New ads will come up soon!\n
+/${BotCommand.Print} - to print current settings criteria
+/${BotCommand.Help} - to see all available commands`,
 };
 
 export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
@@ -37,13 +37,16 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
   createPrivateScene(async (ctx) => {
     const { user: telegramUser, criteria, store } = ctx.wizard.state as IState;
     const user = mapTelegramUserToUser(telegramUser, criteria);
-    const userInStore = store.users.get(user.telegramId);
+    const userInStore = store.get(user.telegramId);
 
     if (isEqual(user, userInStore)) {
       await ctx.reply(TEXT.SETTINGS_SAME);
 
       return;
     }
+
+    console.log('userInStore:::', userInStore);
+    console.log('user:::', user);
 
     await controller.user.upsertUser(user);
 

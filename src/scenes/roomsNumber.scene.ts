@@ -3,7 +3,7 @@ import { Markup, Scenes, MiddlewareFn } from 'telegraf';
 import type { IState } from '../models';
 import { Scene, BlitzResponse, RoomsNumber } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
-import { LEAVE_BLANK, VALIDATOR } from './constants';
+import { LEAVE_BLANK, VALIDATOR, INLINE_ERROR_MESSAGE } from './constants';
 
 const { REG_EXP, ERROR_MESSAGE } = VALIDATOR[Scene.RoomsNumber];
 
@@ -16,7 +16,11 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
   getFirstSceneInlineQuestion(TEXT.WANNA_SPECIFY),
   async (ctx, done) => {
     const callbackQuery = ctx.callbackQuery as CallbackQuery.DataCallbackQuery;
-    const inlineResponse = callbackQuery.data as BlitzResponse;
+    const inlineResponse = callbackQuery?.data as BlitzResponse;
+
+    if (!inlineResponse) {
+      return ctx.replyWithHTML(INLINE_ERROR_MESSAGE);
+    }
 
     await ctx.editMessageText(
       `${TEXT.WANNA_SPECIFY}\nChoosen: <b>${inlineResponse}</b>`,

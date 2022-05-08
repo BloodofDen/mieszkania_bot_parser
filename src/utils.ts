@@ -1,8 +1,9 @@
 import { isEqual, differenceWith } from 'lodash';
-import { Telegraf, Scenes } from 'telegraf';
+import { Telegraf, Scenes, TelegramError } from 'telegraf';
 import type { IUser, IAdvertisement, StoreCallback } from './models';
 import { Parser } from './parsers';
 import { Store } from './store';
+import { BlockedByUserError } from './errors';
 
 export const stopBot = (
   bot: Telegraf<Scenes.WizardContext>,
@@ -29,7 +30,7 @@ export const createStoreCallback = (
 
   advertisements.unshift(...diffAds);
 
-  const sendMessagePromises = diffAds.map(
+  const text = diffAds.map(
     (ad, i) => {
       const sentences = [
         i === 0 ? '🔥There are new ads. Check them out!🔥\n' : null,
@@ -41,13 +42,20 @@ export const createStoreCallback = (
       ];
       const message = sentences.filter(Boolean).join('\n');
 
-      return bot.telegram.sendMessage(
-        userTelegramId,
-        message,
-        { parse_mode: 'HTML' },
-      );
+      return message;
     },
-  );
+  ).join('\n');
 
-  await Promise.all(sendMessagePromises);
+  try {
+    await bot.telegram.sendMessage(
+      userTelegramId,
+      text,
+      { parse_mode: 'HTML' },
+    );
+  } catch (err) {
+    throw new BlockedByUserError(
+      err as TelegramError,
+      userTelegramId,
+    );
+  }
 };

@@ -26,7 +26,7 @@ const TEXT = {
 export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
   createProvinceScene((ctx) => {
     const { criteria } = ctx.wizard.state as IState;
-    const shouldGoToCityScene = criteria.province && !criteria.province;
+    const shouldGoToCityScene = criteria.province && !criteria.city;
 
     return shouldGoToCityScene ? Scene.City : Scene.RoomsNumber;
   }),
@@ -41,12 +41,8 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
 
     if (isEqual(user, userInStore)) {
       await ctx.reply(TEXT.SETTINGS_SAME);
-
       return;
     }
-
-    console.log('userInStore:::', userInStore);
-    console.log('user:::', user);
 
     await controller.user.upsertUser(user);
 

@@ -1,5 +1,6 @@
 import type { IUser, IAdvertisement, StoreCallback } from './models';
 import { Parser } from './parsers';
+import { BlockedByUserError, ERROR_TYPE } from './errors';
 
 const {
   DEFAULT_PARSING_FREQUENCY = 0.5,
@@ -19,7 +20,7 @@ export class Store {
   #timers = new Map<IUser['telegramId'], NodeJS.Timer>();
 
   constructor(callback: StoreCallback) {
-    this.#callback = callback;
+    this.#callback = (...params) => callback(...params).catch(this.handleError);
   }
 
   async setup(users: IUser[]): Promise<void> {
@@ -94,5 +95,15 @@ export class Store {
     ));
 
     console.log(`Timer was set for user with id = '${telegramId}'`);
+  }
+
+  private handleError = (err: Error): void => {
+    if (err instanceof BlockedByUserError) {
+      if (err.telegramError.response.error_code === ERROR_TYPE.BLOCKED_BY_USER) {
+        console.error(`Bot was blocked by the user with id = '${err.userId}'`);
+      }
+
+      this.removeTimer(err.userId);
+    }
   }
 }

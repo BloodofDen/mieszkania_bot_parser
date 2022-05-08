@@ -20,12 +20,11 @@ const {
 const MONGODB_PATH = `mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q.mongodb.net/${NODE_ENV}?retryWrites=true&w=majority`;
 
 connect(MONGODB_PATH)
+  .then(() => console.log('DB Connection established!'))
   .then(runBot)
   .catch(err => console.error('Error:::', err));
 
 async function runBot(): Promise<void> {
-  console.log('DB Connection established!');
-
   const bot = new Telegraf<Scenes.WizardContext>(BOT_TOKEN!);
   const stage = new Scenes.Stage(scenes);
 
@@ -47,11 +46,10 @@ async function runBot(): Promise<void> {
   bot.use(stage.middleware());
 
   Object.values(BotCommand).forEach(
-    command =>
-      bot.command(
-        command,
-        commandHandlerMapper[command],
-      ),
+    command => bot.command(
+      command,
+      commandHandlerMapper[command],
+    ),
   );
 
   bot.launch();

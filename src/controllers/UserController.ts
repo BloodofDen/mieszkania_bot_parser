@@ -17,7 +17,7 @@ export class UserController {
 
   getUsers(): Query<IUserDocument[], IUserDocument> | never[] {
     try {
-      return User.find({});
+      return User.find({}).lean();
     } catch (err) {
       console.error('Error while getUsers:::', err);
       return [];

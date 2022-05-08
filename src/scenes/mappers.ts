@@ -13,7 +13,7 @@ export const mapTelegramUserToUser = (
     lastName: telegramUser.last_name,
     nickname: telegramUser.username,
     languageCode: telegramUser.language_code,
-    criteria,
+    criteria: { ...criteria },
   };
 
   return newUser;

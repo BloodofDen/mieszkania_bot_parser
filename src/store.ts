@@ -75,7 +75,14 @@ export class Store {
 
   removeTimer(telegramId: IUser['telegramId']): void {
     const intervalId = this.#timers.get(telegramId);
-    clearInterval(intervalId!);
+
+    if (!intervalId) {
+      console.log(`No timer set up for user with id = '${telegramId}'`);
+
+      return;
+    }
+
+    clearInterval(intervalId);
     this.#timers.delete(telegramId);
 
     console.log(`Timer was removed for user with id = '${telegramId}'`);

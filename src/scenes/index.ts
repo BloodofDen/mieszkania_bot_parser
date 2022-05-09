@@ -40,7 +40,9 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
     const userInStore = store.get(user.telegramId);
 
     if (isEqual(user, userInStore)) {
+      store.setTimer(user.telegramId);
       await ctx.reply(TEXT.SETTINGS_SAME);
+
       return;
     }
 

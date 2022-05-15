@@ -11,7 +11,9 @@ export abstract class BaseParser {
     protected pathname: URL['pathname'],
   ) {
     const baseUrl = new URL(pathname, origin);
-    const subPath = deburr(criteria.city ?? criteria.province).toLowerCase();
+    const subPath = deburr(
+      criteria.city ?? criteria.province,
+    ).replace(/\s+/g, '-').toLowerCase();
 
     this.url = new URL(subPath, baseUrl);
   }

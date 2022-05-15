@@ -4,6 +4,7 @@ import type { User as ITelegramUser } from 'typegram';
 import { Province, City } from './scenes/models';
 import { Parser } from './parsers';
 import { Store } from './store';
+import { BotCommand } from './commands';
 
 export type StoreCallback = (
   userTelegramId: IUser['telegramId'],
@@ -15,6 +16,7 @@ export interface IState {
   user: ITelegramUser;
   criteria: ICriteria;
   store: Store;
+  command: BotCommand.Start | BotCommand.Update;
 };
 
 export enum AdvertisementSource {

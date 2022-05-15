@@ -1,5 +1,7 @@
 import { UserController } from './UserController';
 
-export class Controller {
+class Controller {
   readonly user = new UserController();
 }
+
+export const controller = new Controller();

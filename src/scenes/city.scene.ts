@@ -1,5 +1,6 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
+import { BotCommand } from '../commands';
 import type { IState } from '../models';
 import { Scene, BlitzResponse, City } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
@@ -9,14 +10,20 @@ import { VALIDATOR, INLINE_ERROR_MESSAGE } from './constants';
 const { ERROR_MESSAGE } = VALIDATOR[Scene.City];
 
 const TEXT = {
-  PLEASE_SELECT: `Please select <b>${Scene.City}</b>:`,
-  WANNA_SPECIFY: `Do you want to specify <b>${Scene.City}</b>?`,
+  PLEASE_SELECT: {
+    [BotCommand.Start]: `Please select <b>City</b>:`,
+    [BotCommand.Update]: `Please update <b>City</b>:`,
+  },
+  WANNA_SPECIFY: {
+    [BotCommand.Start]: `Do you want to specify <b>City</b>?`,
+    [BotCommand.Update]: `Do you want to update <b>City</b>?`,
+  }
 };
 
 const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
   getFirstSceneInlineQuestion(TEXT.WANNA_SPECIFY),
   async (ctx, done) => {
-    const { criteria } = ctx.wizard.state as IState;
+    const { criteria, command } = ctx.wizard.state as IState;
     const callbackQuery = ctx.callbackQuery as CallbackQuery.DataCallbackQuery;
     const inlineResponse = callbackQuery?.data as BlitzResponse;
 
@@ -34,7 +41,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     }
 
     await ctx.replyWithHTML(
-      TEXT.PLEASE_SELECT,
+      TEXT.PLEASE_SELECT[command],
       Markup.keyboard(
         PROVINCE_TO_CITY_MAPPER[criteria.province!],
         { columns: 1 },
@@ -44,7 +51,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     return ctx.wizard.next();
   },
   (ctx, done) => {
-    const state = ctx.wizard.state as IState;
+    const { criteria } = ctx.wizard.state as IState;
     const message = ctx.message as Message.TextMessage;
     const city = message.text as City;
 
@@ -52,7 +59,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
       return ctx.replyWithHTML(ERROR_MESSAGE);
     }
 
-    state.criteria.city = city;
+    criteria.city = city;
     return done();
   },
 ];

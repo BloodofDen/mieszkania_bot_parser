@@ -21,7 +21,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     return ctx.wizard.next();
   },
   async (ctx, done) => {
-    const state = ctx.wizard.state as IState;
+    const { criteria } = ctx.wizard.state as IState;
     const message = ctx.message as Message.TextMessage;
     const blitzResponse = message.text as BlitzResponse;
 
@@ -29,7 +29,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
       return ctx.replyWithHTML(ERROR_MESSAGE);
     }
 
-    state.criteria.isPrivate = blitzResponse === BlitzResponse.Yes;
+    criteria.isPrivate = blitzResponse === BlitzResponse.Yes;
     return done();
   },
 ];

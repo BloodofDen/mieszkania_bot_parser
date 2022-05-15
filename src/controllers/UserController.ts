@@ -23,4 +23,12 @@ export class UserController {
       return [];
     }
   }
+
+  deleteUser(telegramId: IUser['telegramId']): void {
+    try {
+      User.deleteOne({ telegramId });
+    } catch (err) {
+      console.error('Error while deleteUser:::', err);
+    }
+  }
 }

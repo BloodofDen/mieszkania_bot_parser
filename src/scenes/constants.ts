@@ -13,8 +13,8 @@ export const VALIDATOR: Record<Scene, {
     ERROR_MESSAGE: `Please choose value from list`,
   },
   [Scene.Area]: {
-    ERROR_MESSAGE: `Please specify value from <b>1.00</b> to <b>999.99</b>`,
-    REG_EXP: /^[1-9]\d{0,2}(\.\d{1,2})?$/,
+    ERROR_MESSAGE: `Please specify value from <b>1</b> to <b>999</b>`,
+    REG_EXP: /^[1-9]\d{0,2}$/,
   },
   [Scene.RoomsNumber]: {
     ERROR_MESSAGE: `Please specify value from <b>1</b> to <b>4</b>`,

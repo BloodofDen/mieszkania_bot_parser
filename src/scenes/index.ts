@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import { Scenes } from 'telegraf';
-import { Controller } from '../controllers';
+import { controller } from '../controllers';
 import { BotCommand } from '../commands';
 import type { IState } from '../models';
 import { Scene } from './models';
@@ -12,15 +12,14 @@ import { createAreaScene } from './area.scene';
 import { createPriceScene } from './price.scene';
 import { createPrivateScene } from './private.scene';
 
-const controller = new Controller();
-
 const TEXT = {
-  SETTINGS_SAME: `Complete same settings were provided!\n
-/${BotCommand.Print} - to print current settings criteria
+  COMMON: `/${BotCommand.Print} - to print current settings criteria
 /${BotCommand.Help} - to see all available commands`,
-  SETTINGS_SAVED: `Your settings have been saved! New ads will come up soon!\n
-/${BotCommand.Print} - to print current settings criteria
-/${BotCommand.Help} - to see all available commands`,
+  SETTINGS_SAME: `Complete same settings were provided!`,
+  SETTINGS_SAVED: {
+    [BotCommand.Start]: `Your settings have been saved! New ads will come up soon!`,
+    [BotCommand.Update]: `Your settings have been updated! New ads will come up soon!`,
+  },
 };
 
 export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
@@ -35,13 +34,13 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
   createAreaScene(() => Scene.Price),
   createPriceScene(() => Scene.Private),
   createPrivateScene(async (ctx) => {
-    const { user: telegramUser, criteria, store } = ctx.wizard.state as IState;
+    const { user: telegramUser, criteria, store, command } = ctx.wizard.state as IState;
     const user = mapTelegramUserToUser(telegramUser, criteria);
     const userInStore = store.get(user.telegramId);
 
     if (isEqual(user, userInStore)) {
       store.setTimer(user.telegramId);
-      await ctx.reply(TEXT.SETTINGS_SAME);
+      await ctx.reply(`${TEXT.SETTINGS_SAME}\n${TEXT.COMMON}`);
 
       return;
     }
@@ -54,6 +53,6 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
       await store.update(user);
     }
 
-    await ctx.reply(TEXT.SETTINGS_SAVED);
+    await ctx.reply(`${TEXT.SETTINGS_SAVED[command]}\n${TEXT.COMMON}`);
   }),
 ];

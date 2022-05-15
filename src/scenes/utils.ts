@@ -1,4 +1,5 @@
 import { Scenes, Markup, MiddlewareFn } from 'telegraf';
+import type { IState } from '../models';
 import { Scene, BlitzResponse } from './models';
 
 const unwrapCallback = async (
@@ -50,10 +51,16 @@ export const wizardSceneFactory = (
   }
 };
 
-export const getFirstSceneInlineQuestion = (text: string): MiddlewareFn<Scenes.WizardContext> =>
+export const getFirstSceneInlineQuestion = (
+  text: {
+    [key in IState['command']]: string;
+  },
+): MiddlewareFn<Scenes.WizardContext> =>
   async (ctx) => {
+    const { command } = ctx.wizard.state as IState;
+
     await ctx.replyWithHTML(
-      text,
+      text[command],
       Markup.inlineKeyboard([
         Markup.button.callback('✅Yes', BlitzResponse.Yes),
         Markup.button.callback('❌No', BlitzResponse.No),

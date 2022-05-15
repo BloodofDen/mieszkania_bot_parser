@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 import { connect } from 'mongoose';
 import { Telegraf, Scenes, session } from 'telegraf';
-import { Controller } from './controllers';
+import { controller } from './controllers';
 import { scenes } from './scenes';
 import { Store } from './store';
 import type { StoreCallback } from './models';
@@ -28,7 +28,6 @@ async function runBot(): Promise<void> {
   const bot = new Telegraf<Scenes.WizardContext>(BOT_TOKEN!);
   const stage = new Scenes.Stage(scenes);
 
-  const controller = new Controller();
   const users = await controller.user.getUsers();
 
   const storeCallback: StoreCallback = createStoreCallback(bot);

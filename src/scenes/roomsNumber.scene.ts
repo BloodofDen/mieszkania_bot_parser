@@ -1,5 +1,6 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
+import { BotCommand } from '../commands';
 import type { IState } from '../models';
 import { Scene, BlitzResponse, RoomsNumber } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
@@ -8,13 +9,20 @@ import { LEAVE_BLANK, VALIDATOR, INLINE_ERROR_MESSAGE } from './constants';
 const { REG_EXP, ERROR_MESSAGE } = VALIDATOR[Scene.RoomsNumber];
 
 const TEXT = {
-  PLEASE_SPECIFY: `Please specify <b>${Scene.RoomsNumber}</b>:`,
-  WANNA_SPECIFY: `Do you want to specify <b>${Scene.RoomsNumber}</b>?`,
+  PLEASE_SPECIFY: {
+    [BotCommand.Start]: `Please specify <b>Number of Rooms</b>:`,
+    [BotCommand.Update]: `Please update <b>Number of Rooms</b>:`,
+  },
+  WANNA_SPECIFY: {
+    [BotCommand.Start]: `Do you want to specify <b>Number of Rooms</b>?`,
+    [BotCommand.Update]: `Do you want to update <b>Number of Rooms</b>?`,
+  },
 };
 
 const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
   getFirstSceneInlineQuestion(TEXT.WANNA_SPECIFY),
   async (ctx, done) => {
+    const { command } = ctx.wizard.state as IState;
     const callbackQuery = ctx.callbackQuery as CallbackQuery.DataCallbackQuery;
     const inlineResponse = callbackQuery?.data as BlitzResponse;
 
@@ -32,7 +40,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     }
 
     await ctx.replyWithHTML(
-      TEXT.PLEASE_SPECIFY,
+      TEXT.PLEASE_SPECIFY[command],
       Markup.keyboard([
         Object.keys(RoomsNumber).filter(key => Number(key)),
         [LEAVE_BLANK],
@@ -42,11 +50,12 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     return ctx.wizard.next();
   },
   async (ctx, done) => {
-    const state = ctx.wizard.state as IState;
+    const { criteria } = ctx.wizard.state as IState;
     const message = ctx.message as Message.TextMessage;
     const roomsNumberStr = message.text;
 
     if (roomsNumberStr === LEAVE_BLANK) {
+      delete criteria.roomsNumber;
       return done();
     }
 
@@ -56,7 +65,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
 
     const roomsNumber = parseInt(roomsNumberStr, 10);
 
-    state.criteria.roomsNumber = roomsNumber;
+    criteria.roomsNumber = roomsNumber;
     return done();
   },
 ];

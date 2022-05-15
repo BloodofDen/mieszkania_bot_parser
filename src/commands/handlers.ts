@@ -1,4 +1,5 @@
 import { Scene } from '../scenes/models';
+import { controller } from '../controllers';
 import type { IState } from '../models';
 import { BotCommand, GetCommandHandler } from './models';
 
@@ -8,7 +9,7 @@ export const getOnStartHandler: GetCommandHandler = (store) => (ctx) => {
   if (user) {
     return ctx.replyWithHTML(
       `Bot is already working for <b>${ctx.from!.first_name}</b>
-      Please use /${BotCommand.Update} command in order to update settings`,
+Please use /${BotCommand.Update} command in order to update settings`,
     );
   }
 
@@ -16,6 +17,7 @@ export const getOnStartHandler: GetCommandHandler = (store) => (ctx) => {
     user: ctx.from!,
     criteria: { isPrivate: false },
     store,
+    command: BotCommand.Start,
   };
 
   ctx.scene.enter(Scene.Province, initialState);
@@ -27,7 +29,7 @@ export const getOnUpdateHandler: GetCommandHandler = (store) => (ctx) => {
   if (!user) {
     return ctx.replyWithHTML(
       `Bot isn't working for <b>${ctx.from!.first_name}</b>
-      Please use /${BotCommand.Start} command in order to start bot`,
+Please use /${BotCommand.Start} command in order to start bot`,
     );
   }
 
@@ -37,6 +39,7 @@ export const getOnUpdateHandler: GetCommandHandler = (store) => (ctx) => {
     user: ctx.from!,
     criteria: { ...user.criteria },
     store,
+    command: BotCommand.Update,
   };
 
   ctx.scene.enter(Scene.Province, initialState);
@@ -65,7 +68,12 @@ export const getOnPrintHandler: GetCommandHandler = (store) => (ctx) => {
   }
 };
 
-export const getOnStopHandler: GetCommandHandler = (store) => ({ from: user }) => store.remove(user!.id);
+export const getOnStopHandler: GetCommandHandler = (store) => async ({ from: user }) => {
+  const telegramId = user!.id;
+
+  store.remove(telegramId);
+  await controller.user.deleteUser(telegramId);
+};
 
 export const getOnPauseHandler: GetCommandHandler = (store) => ({ from: user }) => store.removeTimer(user!.id);
 

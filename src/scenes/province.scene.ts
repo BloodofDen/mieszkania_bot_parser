@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { Message, Location } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
+import { BotCommand } from '../commands';
 import type { IState } from '../models';
 import { Scene, Province, City } from './models';
 import { wizardSceneFactory } from './utils';
@@ -9,29 +10,43 @@ import { VALIDATOR } from './constants';
 const { ERROR_MESSAGE } = VALIDATOR[Scene.Province];
 
 const TEXT = {
-  HOW_PROVIDE_DETAILS: `How would you like to provide Province/City details?`,
-  PLEASE_SELECT: `Please select <b>${Scene.Province}</b>:`,
-  PROVIDE_LOCATION: 'Provide location',
-  PROVIDE_FROM_LIST: 'Provide Province/City from list',
-  DONT_PROVIDE: `Don't want to specify Province/City`,
+  HOW_PROVIDE_DETAILS: {
+    [BotCommand.Start]: `How would you like to provide Province/City details?`,
+    [BotCommand.Update]: `How would you like to update Province/City details?`,
+  },
+  PLEASE_SELECT: `Please select <b>Province</b>:`,
+  PROVIDE_LOCATION: {
+    [BotCommand.Start]: 'Provide location',
+    [BotCommand.Update]: 'Update location',
+  },
+  PROVIDE_FROM_LIST: {
+    [BotCommand.Start]: 'Provide Province/City from list',
+    [BotCommand.Update]: 'Update Province/City from list',
+  },
+  DONT_PROVIDE: {
+    [BotCommand.Start]: `Don't want to specify Province/City`,
+    [BotCommand.Update]: `Don't want to update Province/City`,
+  },
   CURRENT_CITY: (city: City) => `Current city: <b>${city}</b>`,
 };
 
 const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
   async (ctx) => {
+    const { command } = ctx.wizard.state as IState;
+
     await ctx.reply(
-      TEXT.HOW_PROVIDE_DETAILS,
+      TEXT.HOW_PROVIDE_DETAILS[command],
       Markup.keyboard([
-        Markup.button.locationRequest(TEXT.PROVIDE_LOCATION),
-        Markup.button.text(TEXT.PROVIDE_FROM_LIST),
-        Markup.button.text(TEXT.DONT_PROVIDE),
+        Markup.button.locationRequest(TEXT.PROVIDE_LOCATION[command]),
+        Markup.button.text(TEXT.PROVIDE_FROM_LIST[command]),
+        Markup.button.text(TEXT.DONT_PROVIDE[command]),
       ]).oneTime().resize(),
     );
 
     return ctx.wizard.next();
   },
   async (ctx, done) => {
-    const state = ctx.wizard.state as IState;
+    const { criteria, command } = ctx.wizard.state as IState;
     const text = (<Message.TextMessage>ctx.message)?.text as string;
     const location = (<Message.LocationMessage>ctx.message)?.location as Location;
 
@@ -44,16 +59,16 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
         Markup.removeKeyboard(),
       );
 
-      delete state.criteria.province;
-      state.criteria.city = city;
+      delete criteria.province;
+      criteria.city = city;
 
       return done();
     }
 
     switch (text) {
-      case TEXT.DONT_PROVIDE:
+      case TEXT.DONT_PROVIDE[command]:
         return done();
-      case TEXT.PROVIDE_FROM_LIST:
+      case TEXT.PROVIDE_FROM_LIST[command]:
         await ctx.replyWithHTML(
           TEXT.PLEASE_SELECT,
           Markup.keyboard(
@@ -68,7 +83,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     }
   },
   (ctx, done) => {
-    const state = ctx.wizard.state as IState;
+    const { criteria } = ctx.wizard.state as IState;
     const message = ctx.message as Message.TextMessage;
     const province = message.text as Province;
 
@@ -76,8 +91,8 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
       return ctx.replyWithHTML(ERROR_MESSAGE);
     }
 
-    state.criteria.province = province;
-    delete state.criteria.city;
+    criteria.province = province;
+    delete criteria.city;
 
     return done();
   },

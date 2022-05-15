@@ -28,6 +28,7 @@ export const createStoreCallback = (
     return;
   }
 
+  advertisements.splice(advertisements.length - diffAds.length, diffAds.length);
   advertisements.unshift(...diffAds);
 
   const text = diffAds.map(

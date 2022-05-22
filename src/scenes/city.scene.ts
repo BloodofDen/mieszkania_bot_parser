@@ -1,38 +1,26 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
-import { BotCommand } from '../commands';
 import type { IState } from '../models';
 import { Scene, BlitzResponse, City } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
-import { PROVINCE_TO_CITY_MAPPER } from './mappers';
-import { VALIDATOR, INLINE_ERROR_MESSAGE } from './constants';
+import { SCENE_TO_VALIDATOR_MAPPER, SCENE_TO_TEXT_MAPPER, PROVINCE_TO_CITY_MAPPER } from './constants';
 
-const { ERROR_MESSAGE } = VALIDATOR[Scene.City];
-
-const TEXT = {
-  PLEASE_SELECT: {
-    [BotCommand.Start]: `Please select <b>City</b>:`,
-    [BotCommand.Update]: `Please update <b>City</b>:`,
-  },
-  WANNA_SPECIFY: {
-    [BotCommand.Start]: `Do you want to specify <b>City</b>?`,
-    [BotCommand.Update]: `Do you want to update <b>City</b>?`,
-  }
-};
+const TEXT = SCENE_TO_TEXT_MAPPER[Scene.City];
+const VALIDATOR = SCENE_TO_VALIDATOR_MAPPER[Scene.City];
 
 const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
-  getFirstSceneInlineQuestion(TEXT.WANNA_SPECIFY),
+  getFirstSceneInlineQuestion(TEXT),
   async (ctx, done) => {
     const { criteria, command } = ctx.wizard.state as IState;
     const callbackQuery = ctx.callbackQuery as CallbackQuery.DataCallbackQuery;
     const inlineResponse = callbackQuery?.data as BlitzResponse;
 
     if (!inlineResponse) {
-      return ctx.replyWithHTML(INLINE_ERROR_MESSAGE);
+      return ctx.replyWithHTML(VALIDATOR.ERROR_MESSAGE.INLINE_OMITTED!);
     }
 
     await ctx.editMessageText(
-      `${TEXT.WANNA_SPECIFY}\nChoosen: <b>${inlineResponse}</b>`,
+      `${TEXT[command].INLINE_QUESTION}\nChoosen: <b>${inlineResponse}</b>`,
       { parse_mode: 'HTML' },
     );
 
@@ -41,7 +29,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     }
 
     await ctx.replyWithHTML(
-      TEXT.PLEASE_SELECT[command],
+      TEXT[command].SELECT_CITY!,
       Markup.keyboard(
         PROVINCE_TO_CITY_MAPPER[criteria.province!],
         { columns: 1 },
@@ -56,7 +44,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     const city = message.text as City;
 
     if (!Object.values(City).includes(city)) {
-      return ctx.replyWithHTML(ERROR_MESSAGE);
+      return ctx.replyWithHTML(VALIDATOR.ERROR_MESSAGE.WRONG_VALUE);
     }
 
     criteria.city = city;

@@ -1,45 +1,48 @@
 import axios from 'axios';
-import type { Message, Location } from 'typegram';
+import type { Message, Location, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
 import { BotCommand } from '../commands';
 import type { IState } from '../models';
-import { Scene, Province, City } from './models';
-import { wizardSceneFactory } from './utils';
-import { VALIDATOR } from './constants';
+import { Scene, Province, BlitzResponse } from './models';
+import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
+import { LEAVE_BLANK, SCENE_TO_VALIDATOR_MAPPER, SCENE_TO_TEXT_MAPPER } from './constants';
 
-const { ERROR_MESSAGE } = VALIDATOR[Scene.Province];
-
-const TEXT = {
-  HOW_PROVIDE_DETAILS: {
-    [BotCommand.Start]: `How would you like to provide Province/City details?`,
-    [BotCommand.Update]: `How would you like to update Province/City details?`,
-  },
-  PLEASE_SELECT: `Please select <b>Province</b>:`,
-  PROVIDE_LOCATION: {
-    [BotCommand.Start]: 'Provide location',
-    [BotCommand.Update]: 'Update location',
-  },
-  PROVIDE_FROM_LIST: {
-    [BotCommand.Start]: 'Provide Province/City from list',
-    [BotCommand.Update]: 'Update Province/City from list',
-  },
-  DONT_PROVIDE: {
-    [BotCommand.Start]: `Don't want to specify Province/City`,
-    [BotCommand.Update]: `Don't want to update Province/City`,
-  },
-  CURRENT_CITY: (city: City) => `Current city: <b>${city}</b>`,
-};
+const TEXT = SCENE_TO_TEXT_MAPPER[Scene.Province];
+const VALIDATOR = SCENE_TO_VALIDATOR_MAPPER[Scene.Province];
 
 const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
-  async (ctx) => {
+  async (ctx, done) => {
     const { command } = ctx.wizard.state as IState;
 
+    if (command === BotCommand.Update) {
+      return getFirstSceneInlineQuestion(TEXT)(ctx, done);
+    }
+
+    ctx.wizard.next();
+    return (<MiddlewareFn<Scenes.WizardContext>>ctx.wizard.step)(ctx, done);
+  },
+  async (ctx, done) => {
+    const { command } = ctx.wizard.state as IState;
+    const callbackQuery = ctx.callbackQuery as CallbackQuery.DataCallbackQuery;
+    const inlineResponse = callbackQuery?.data as BlitzResponse;
+
+    if (inlineResponse) {
+      await ctx.editMessageText(
+        `${TEXT[command].INLINE_QUESTION}\nChoosen: <b>${inlineResponse}</b>`,
+        { parse_mode: 'HTML' },
+      );
+
+      if (inlineResponse === BlitzResponse.No) {
+        return done();
+      }
+    }
+
     await ctx.reply(
-      TEXT.HOW_PROVIDE_DETAILS[command],
+      TEXT[command].HOW_PROVIDE_DETAILS!,
       Markup.keyboard([
-        Markup.button.locationRequest(TEXT.PROVIDE_LOCATION[command]),
-        Markup.button.text(TEXT.PROVIDE_FROM_LIST[command]),
-        Markup.button.text(TEXT.DONT_PROVIDE[command]),
+        Markup.button.locationRequest(TEXT[command].LOCATION!),
+        Markup.button.text(TEXT[command].FROM_LIST!),
+        Markup.button.text(LEAVE_BLANK),
       ]).oneTime().resize(),
     );
 
@@ -55,7 +58,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
       const { data: { address: { city } } } = await axios(url.toString());
 
       await ctx.replyWithHTML(
-        TEXT.CURRENT_CITY(city),
+        TEXT[command].CURRENT_CITY + city,
         Markup.removeKeyboard(),
       );
 
@@ -66,11 +69,14 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     }
 
     switch (text) {
-      case TEXT.DONT_PROVIDE[command]:
+      case LEAVE_BLANK:
+        delete criteria.province;
+        delete criteria.city;
+
         return done();
-      case TEXT.PROVIDE_FROM_LIST[command]:
+      case TEXT[command].FROM_LIST!:
         await ctx.replyWithHTML(
-          TEXT.PLEASE_SELECT,
+          TEXT[command].SELECT_PROVINCE!,
           Markup.keyboard(
             Object.values(Province),
             { columns: 1 },
@@ -79,7 +85,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
 
         return ctx.wizard.next();
       default:
-        return ctx.replyWithHTML(ERROR_MESSAGE);
+        return ctx.replyWithHTML(VALIDATOR.ERROR_MESSAGE.WRONG_VALUE);
     }
   },
   (ctx, done) => {
@@ -88,7 +94,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     const province = message.text as Province;
 
     if (!Object.values(Province).includes(province)) {
-      return ctx.replyWithHTML(ERROR_MESSAGE);
+      return ctx.replyWithHTML(VALIDATOR.ERROR_MESSAGE.WRONG_VALUE);
     }
 
     criteria.province = province;

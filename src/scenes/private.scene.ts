@@ -3,18 +3,17 @@ import { Markup, Scenes, MiddlewareFn } from 'telegraf';
 import type { IState } from '../models';
 import { Scene, BlitzResponse } from './models';
 import { wizardSceneFactory } from './utils';
-import { VALIDATOR } from './constants';
+import { SCENE_TO_VALIDATOR_MAPPER, SCENE_TO_TEXT_MAPPER } from './constants';
 
-const { ERROR_MESSAGE } = VALIDATOR[Scene.Private];
-
-const TEXT = {
-  SHOULD_BE_PRIVATE: `Should advertisements be <b>${Scene.Private}</b>?`,
-};
+const TEXT = SCENE_TO_TEXT_MAPPER[Scene.Private];
+const VALIDATOR = SCENE_TO_VALIDATOR_MAPPER[Scene.Private];
 
 const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
   async (ctx) => {
+    const { command } = ctx.wizard.state as IState;
+
     await ctx.replyWithHTML(
-      TEXT.SHOULD_BE_PRIVATE,
+      TEXT[command].SHOULD_BE_PRIVATE!,
       Markup.keyboard(Object.keys(BlitzResponse)).oneTime().resize(),
     );
 
@@ -26,7 +25,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     const blitzResponse = message.text as BlitzResponse;
 
     if (!Object.values(BlitzResponse).includes(blitzResponse)) {
-      return ctx.replyWithHTML(ERROR_MESSAGE);
+      return ctx.replyWithHTML(VALIDATOR.ERROR_MESSAGE.WRONG_VALUE);
     }
 
     criteria.isPrivate = blitzResponse === BlitzResponse.Yes;

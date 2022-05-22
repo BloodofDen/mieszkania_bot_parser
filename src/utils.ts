@@ -45,7 +45,7 @@ export const createStoreCallback = (
 
       return message;
     },
-  ).join('\n');
+  ).join('\n\n');
 
   try {
     await bot.telegram.sendMessage(

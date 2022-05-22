@@ -2,11 +2,12 @@ import { Scene } from '../scenes/models';
 import { controller } from '../controllers';
 import type { IState } from '../models';
 import { BotCommand, GetCommandHandler } from './models';
+import { DEFAULT_NO_USER_FOUND_TEXT } from './constants';
 
 export const getOnStartHandler: GetCommandHandler = (store) => (ctx) => {
-  const user = store.users.get(ctx.from!.id);
+  const isUserAlreadyInStore = store.has(ctx.from!.id);
 
-  if (user) {
+  if (isUserAlreadyInStore) {
     return ctx.replyWithHTML(
       `Bot is already working for <b>${ctx.from!.first_name}</b>
 Please use /${BotCommand.Update} command in order to update settings`,
@@ -46,11 +47,12 @@ Please use /${BotCommand.Start} command in order to start bot`,
 };
 
 export const getOnPrintHandler: GetCommandHandler = (store) => (ctx) => {
-  const user = store.users.get(ctx.from!.id);
+  const telegramId = ctx.from!.id;
+  const user = store.users.get(telegramId);
 
   if (user) {
     const sentences = [
-      'Here is your search criteria:',
+      'Here is your search criteria:\n',
       user.criteria.roomsNumber ? `Rooms Number: <b>${user.criteria.roomsNumber}</b>` : null,
       user.criteria.priceMin ? `Price min: <b>${user.criteria.priceMin}</b> PLN` : null,
       user.criteria.priceMax ? `Price max: <b>${user.criteria.priceMax}</b> PLN` : null,
@@ -64,24 +66,53 @@ export const getOnPrintHandler: GetCommandHandler = (store) => (ctx) => {
 
     return ctx.replyWithHTML(message);
   } else {
-    return ctx.reply('No user found, start the bot!');
+    return ctx.reply(DEFAULT_NO_USER_FOUND_TEXT);
   }
 };
 
-export const getOnStopHandler: GetCommandHandler = (store) => async ({ from: user }) => {
-  const telegramId = user!.id;
+export const getOnStopHandler: GetCommandHandler = (store) => async (ctx) => {
+  const telegramId = ctx.from!.id;
+  const isUserAlreadyInStore = store.has(telegramId);
+
+  if (!isUserAlreadyInStore) {
+    return ctx.reply(DEFAULT_NO_USER_FOUND_TEXT);
+  }
 
   store.remove(telegramId);
   await controller.user.deleteUser(telegramId);
+
+  return ctx.reply(`Bot has been stopped`);
 };
 
-export const getOnPauseHandler: GetCommandHandler = (store) => ({ from: user }) => store.removeTimer(user!.id);
+export const getOnPauseHandler: GetCommandHandler = (store) => (ctx) => {
+  const telegramId = ctx.from!.id;
+  const isUserAlreadyInStore = store.has(telegramId);
 
-export const getOnResumeHandler: GetCommandHandler = (store) => ({ from: user }) => store.setTimer(user!.id);
+  if (!isUserAlreadyInStore) {
+    return ctx.reply(DEFAULT_NO_USER_FOUND_TEXT);
+  }
+
+  store.removeTimer(telegramId);
+
+  return ctx.reply(`You stopped bot from sending new messages`);
+};
+
+export const getOnResumeHandler: GetCommandHandler = (store) => (ctx) => {
+  const telegramId = ctx.from!.id;
+  const isUserAlreadyInStore = store.has(telegramId);
+
+  if (!isUserAlreadyInStore) {
+    return ctx.reply(DEFAULT_NO_USER_FOUND_TEXT);
+  }
+
+  store.setTimer(telegramId);
+
+  return ctx.reply(`You launched bot for sending new messages`);
+};
 
 export const getOnHelpHandler: GetCommandHandler = (_store) => (ctx) => {
   const message = `
-    Here are the commands and their description:
+    Commands and their description:\n
 /${BotCommand.Print}: Prints current settings criteria
 /${BotCommand.Update}: Updates settings criteria
 /${BotCommand.Pause}: Pauses bot from retrieving updates

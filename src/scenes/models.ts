@@ -1,3 +1,7 @@
+import type { IState } from '../models';
+
+export type ISceneText = Record<IState['command'], { [key in string]: string; }>;
+
 export enum Scene {
   Province = 'Province',
   City = 'City',
@@ -8,7 +12,7 @@ export enum Scene {
 }
 
 export enum RoomsNumber {
-  One = 1, Two, Tree, Four,
+  One = 1, Two, Three, Four,
 }
 
 export enum BlitzResponse {

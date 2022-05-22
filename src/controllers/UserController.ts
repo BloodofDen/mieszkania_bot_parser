@@ -1,32 +1,33 @@
-import type { Query } from 'mongoose';
-import { IUser, IUserDocument, User } from '../models';
+import { IUser, User } from '../models';
 
 export class UserController {
-  upsertUser(user: IUser): Query<IUserDocument | null, IUserDocument> | void {
+  async upsertUser(user: IUser): Promise<void> {
     try {
-      return User.findOneAndUpdate(
+      await User.findOneAndUpdate(
         { telegramId: user.telegramId },
         user,
         { upsert: true },
       );
     } catch (err) {
       console.error('Error while upsertUser:::', err);
-      return;
     }
   }
 
-  getUsers(): Query<IUserDocument[], IUserDocument> | never[] {
+  async getUsers(): Promise<IUser[]> {
+    let users: IUser[] = [];
+
     try {
-      return User.find({}).lean();
+      users = await User.find({}).lean();
     } catch (err) {
       console.error('Error while getUsers:::', err);
-      return [];
     }
+
+    return users;
   }
 
-  deleteUser(telegramId: IUser['telegramId']): void {
+  async deleteUser(telegramId: IUser['telegramId']): Promise<void> {
     try {
-      User.deleteOne({ telegramId });
+      await User.deleteOne({ telegramId });
     } catch (err) {
       console.error('Error while deleteUser:::', err);
     }

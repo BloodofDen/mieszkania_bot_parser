@@ -29,11 +29,9 @@ export class Store {
     console.log(`Store successfully set up`);
   }
 
-  get(telegramId: IUser['telegramId']): IUser | undefined {
-    return this.users.get(telegramId);
-  }
-
   async add(user: IUser): Promise<void> {
+    const isUserAlreadyInStore = this.users.has(user.telegramId);
+
     this.users.set(user.telegramId, user);
 
     const parser = new Parser(user.criteria);
@@ -44,23 +42,11 @@ export class Store {
 
     this.setTimer(user.telegramId, parser, advertisements);
 
-    console.log(`User with id = '${user.telegramId}' was added`);
+    console.log(`User with id = '${user.telegramId}' was ${isUserAlreadyInStore ? 'updated' : 'added'}`);
   }
 
-  async update(user: IUser): Promise<void> {
-    this.removeTimer(user.telegramId);
-
-    this.users.set(user.telegramId, user);
-
-    const parser = new Parser(user.criteria);
-    this.#parsers.set(user.telegramId, parser);
-
-    const advertisements = await parser.parse();
-    this.#advertisements.set(user.telegramId, advertisements);
-
-    this.setTimer(user.telegramId, parser, advertisements);
-
-    console.log(`User with id = '${user.telegramId}' was updated`);
+  has(telegramId: IUser['telegramId']): boolean {
+    return this.users.has(telegramId);
   }
 
   remove(telegramId: IUser['telegramId']): void {

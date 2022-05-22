@@ -1,6 +1,7 @@
+import type { User as ITelegramUser } from 'typegram';
 import { Scenes, Markup, MiddlewareFn } from 'telegraf';
-import type { IState } from '../models';
-import { Scene, BlitzResponse } from './models';
+import type { IState, IUser, ICriteria } from '../models';
+import { Scene, BlitzResponse, ISceneText } from './models';
 
 const unwrapCallback = async (
   ctx: Scenes.WizardContext,
@@ -52,15 +53,13 @@ export const wizardSceneFactory = (
 };
 
 export const getFirstSceneInlineQuestion = (
-  text: {
-    [key in IState['command']]: string;
-  },
+  TEXT: ISceneText,
 ): MiddlewareFn<Scenes.WizardContext> =>
   async (ctx) => {
     const { command } = ctx.wizard.state as IState;
 
     await ctx.replyWithHTML(
-      text[command],
+      TEXT[command].INLINE_QUESTION!,
       Markup.inlineKeyboard([
         Markup.button.callback('✅Yes', BlitzResponse.Yes),
         Markup.button.callback('❌No', BlitzResponse.No),
@@ -69,3 +68,20 @@ export const getFirstSceneInlineQuestion = (
 
     return ctx.wizard.next();
   };
+
+export const mapTelegramUserToUser = (
+  telegramUser: ITelegramUser,
+  criteria: ICriteria,
+): IUser => {
+  const newUser: IUser = {
+    telegramId: telegramUser.id,
+    isBot: telegramUser.is_bot,
+    firstName: telegramUser.first_name,
+    lastName: telegramUser.last_name,
+    nickname: telegramUser.username,
+    languageCode: telegramUser.language_code,
+    criteria: { ...criteria },
+  };
+
+  return newUser;
+};

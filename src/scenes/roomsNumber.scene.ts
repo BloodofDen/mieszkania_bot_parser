@@ -1,37 +1,26 @@
 import type { Message, CallbackQuery } from 'typegram';
 import { Markup, Scenes, MiddlewareFn } from 'telegraf';
-import { BotCommand } from '../commands';
 import type { IState } from '../models';
 import { Scene, BlitzResponse, RoomsNumber } from './models';
 import { wizardSceneFactory, getFirstSceneInlineQuestion } from './utils';
-import { LEAVE_BLANK, VALIDATOR, INLINE_ERROR_MESSAGE } from './constants';
+import { LEAVE_BLANK, SCENE_TO_VALIDATOR_MAPPER, SCENE_TO_TEXT_MAPPER } from './constants';
 
-const { REG_EXP, ERROR_MESSAGE } = VALIDATOR[Scene.RoomsNumber];
-
-const TEXT = {
-  PLEASE_SPECIFY: {
-    [BotCommand.Start]: `Please specify <b>Number of Rooms</b>:`,
-    [BotCommand.Update]: `Please update <b>Number of Rooms</b>:`,
-  },
-  WANNA_SPECIFY: {
-    [BotCommand.Start]: `Do you want to specify <b>Number of Rooms</b>?`,
-    [BotCommand.Update]: `Do you want to update <b>Number of Rooms</b>?`,
-  },
-};
+const TEXT = SCENE_TO_TEXT_MAPPER[Scene.RoomsNumber];
+const VALIDATOR = SCENE_TO_VALIDATOR_MAPPER[Scene.RoomsNumber];
 
 const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
-  getFirstSceneInlineQuestion(TEXT.WANNA_SPECIFY),
+  getFirstSceneInlineQuestion(TEXT),
   async (ctx, done) => {
     const { command } = ctx.wizard.state as IState;
     const callbackQuery = ctx.callbackQuery as CallbackQuery.DataCallbackQuery;
     const inlineResponse = callbackQuery?.data as BlitzResponse;
 
     if (!inlineResponse) {
-      return ctx.replyWithHTML(INLINE_ERROR_MESSAGE);
+      return ctx.replyWithHTML(VALIDATOR.ERROR_MESSAGE.INLINE_OMITTED!);
     }
 
     await ctx.editMessageText(
-      `${TEXT.WANNA_SPECIFY}\nChoosen: <b>${inlineResponse}</b>`,
+      `${TEXT[command].INLINE_QUESTION}\nChoosen: <b>${inlineResponse}</b>`,
       { parse_mode: 'HTML' },
     );
 
@@ -40,7 +29,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     }
 
     await ctx.replyWithHTML(
-      TEXT.PLEASE_SPECIFY[command],
+      TEXT[command].ROOMS_NUMBER!,
       Markup.keyboard([
         Object.keys(RoomsNumber).filter(key => Number(key)),
         [LEAVE_BLANK],
@@ -59,8 +48,8 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
       return done();
     }
 
-    if (!roomsNumberStr.match(REG_EXP!)) {
-      return ctx.replyWithHTML(ERROR_MESSAGE);
+    if (!roomsNumberStr.match(VALIDATOR.REG_EXP_PATTERN!)) {
+      return ctx.replyWithHTML(VALIDATOR.ERROR_MESSAGE.WRONG_VALUE);
     }
 
     const roomsNumber = parseInt(roomsNumberStr, 10);

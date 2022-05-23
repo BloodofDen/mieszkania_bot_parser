@@ -11,13 +11,13 @@ export class Store {
 
   readonly #callback: StoreCallback;
 
-  users = new Map<IUser['telegramId'], IUser>();
+  readonly #users = new Map<IUser['telegramId'], IUser>();
 
-  #parsers = new Map<IUser['telegramId'], Parser>();
+  readonly #parsers = new Map<IUser['telegramId'], Parser>();
 
-  #advertisements = new Map<IUser['telegramId'], IAdvertisement[]>();
+  readonly #advertisements = new Map<IUser['telegramId'], IAdvertisement[]>();
 
-  #timers = new Map<IUser['telegramId'], NodeJS.Timer>();
+  readonly #timers = new Map<IUser['telegramId'], NodeJS.Timer>();
 
   constructor(callback: StoreCallback) {
     this.#callback = (...params) => callback(...params).catch(this.handleError);
@@ -30,9 +30,9 @@ export class Store {
   }
 
   async add(user: IUser): Promise<void> {
-    const isUserAlreadyInStore = this.users.has(user.telegramId);
+    const isUserAlreadyInStore = this.has(user.telegramId);
 
-    this.users.set(user.telegramId, user);
+    this.#users.set(user.telegramId, user);
 
     const parser = new Parser(user.criteria);
     this.#parsers.set(user.telegramId, parser);
@@ -45,18 +45,28 @@ export class Store {
     console.log(`User with id = '${user.telegramId}' was ${isUserAlreadyInStore ? 'updated' : 'added'}`);
   }
 
+  get(telegramId: IUser['telegramId']): IUser | void {
+    return this.#users.get(telegramId);
+  }
+
   has(telegramId: IUser['telegramId']): boolean {
-    return this.users.has(telegramId);
+    return this.#users.has(telegramId);
   }
 
   remove(telegramId: IUser['telegramId']): void {
     this.removeTimer(telegramId);
 
-    this.users.delete(telegramId);
+    this.#users.delete(telegramId);
     this.#parsers.delete(telegramId);
     this.#advertisements.delete(telegramId);
 
     console.log(`User with id = '${telegramId}' was removed`);
+  }
+
+  removeAll(): void {
+    this.#users.forEach((_user, telegramId) => this.remove(telegramId));
+
+    console.log(`All users were removed`);
   }
 
   removeTimer(telegramId: IUser['telegramId']): void {

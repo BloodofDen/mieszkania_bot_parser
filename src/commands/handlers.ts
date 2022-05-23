@@ -2,16 +2,19 @@ import { Scene } from '../scenes/models';
 import { controller } from '../controllers';
 import type { IState } from '../models';
 import { BotCommand, GetCommandHandler } from './models';
-import { DEFAULT_NO_USER_FOUND_TEXT } from './constants';
+import {
+  START_COMMAND_TEXT,
+  UPDATE_COMMAND_TEXT,
+  STOP_COMMAND_TEXT,
+  PAUSE_COMMAND_TEXT,
+  RESUME_COMMAND_TEXT,
+  HELP_COMMAND_TEXT,
+  BOT_IS_NOT_WORKING_TEXT,
+} from './constants';
 
 export const getOnStartHandler: GetCommandHandler = (store) => (ctx) => {
-  const isUserAlreadyInStore = store.has(ctx.from!.id);
-
-  if (isUserAlreadyInStore) {
-    return ctx.replyWithHTML(
-      `Bot is already working for <b>${ctx.from!.first_name}</b>
-Please use /${BotCommand.Update} command in order to update settings`,
-    );
+  if (store.has(ctx.from!.id)) {
+    return ctx.replyWithHTML(START_COMMAND_TEXT);
   }
 
   const initialState: IState = {
@@ -25,13 +28,10 @@ Please use /${BotCommand.Update} command in order to update settings`,
 };
 
 export const getOnUpdateHandler: GetCommandHandler = (store) => (ctx) => {
-  const user = store.users.get(ctx.from!.id);
+  const user = store.get(ctx.from!.id);
 
   if (!user) {
-    return ctx.replyWithHTML(
-      `Bot isn't working for <b>${ctx.from!.first_name}</b>
-Please use /${BotCommand.Start} command in order to start bot`,
-    );
+    return ctx.replyWithHTML(UPDATE_COMMAND_TEXT);
   }
 
   store.removeTimer(user.telegramId);
@@ -48,7 +48,7 @@ Please use /${BotCommand.Start} command in order to start bot`,
 
 export const getOnPrintHandler: GetCommandHandler = (store) => (ctx) => {
   const telegramId = ctx.from!.id;
-  const user = store.users.get(telegramId);
+  const user = store.get(telegramId);
 
   if (user) {
     const sentences = [
@@ -66,59 +66,47 @@ export const getOnPrintHandler: GetCommandHandler = (store) => (ctx) => {
 
     return ctx.replyWithHTML(message);
   } else {
-    return ctx.reply(DEFAULT_NO_USER_FOUND_TEXT);
+    return ctx.reply(BOT_IS_NOT_WORKING_TEXT);
   }
 };
 
 export const getOnStopHandler: GetCommandHandler = (store) => async (ctx) => {
   const telegramId = ctx.from!.id;
-  const isUserAlreadyInStore = store.has(telegramId);
 
-  if (!isUserAlreadyInStore) {
-    return ctx.reply(DEFAULT_NO_USER_FOUND_TEXT);
+  if (!store.has(telegramId)) {
+    return ctx.reply(BOT_IS_NOT_WORKING_TEXT);
   }
 
   store.remove(telegramId);
   await controller.user.deleteUser(telegramId);
 
-  return ctx.reply(`Bot has been stopped`);
+  return ctx.reply(STOP_COMMAND_TEXT);
 };
 
 export const getOnPauseHandler: GetCommandHandler = (store) => (ctx) => {
   const telegramId = ctx.from!.id;
-  const isUserAlreadyInStore = store.has(telegramId);
 
-  if (!isUserAlreadyInStore) {
-    return ctx.reply(DEFAULT_NO_USER_FOUND_TEXT);
+  if (!store.has(telegramId)) {
+    return ctx.reply(BOT_IS_NOT_WORKING_TEXT);
   }
 
   store.removeTimer(telegramId);
 
-  return ctx.reply(`You stopped bot from sending new messages`);
+  return ctx.reply(PAUSE_COMMAND_TEXT);
 };
 
 export const getOnResumeHandler: GetCommandHandler = (store) => (ctx) => {
   const telegramId = ctx.from!.id;
-  const isUserAlreadyInStore = store.has(telegramId);
 
-  if (!isUserAlreadyInStore) {
-    return ctx.reply(DEFAULT_NO_USER_FOUND_TEXT);
+  if (!store.has(telegramId)) {
+    return ctx.reply(BOT_IS_NOT_WORKING_TEXT);
   }
 
   store.setTimer(telegramId);
 
-  return ctx.reply(`You launched bot for sending new messages`);
+  return ctx.reply(RESUME_COMMAND_TEXT);
 };
 
 export const getOnHelpHandler: GetCommandHandler = (_store) => (ctx) => {
-  const message = `
-    Commands and their description:\n
-/${BotCommand.Print}: Prints current settings criteria
-/${BotCommand.Update}: Updates settings criteria
-/${BotCommand.Pause}: Pauses bot from retrieving updates
-/${BotCommand.Resume}: Resumes bot for retrieving updates
-/${BotCommand.Stop}: Stops bot
-  `;
-
-  return ctx.reply(message);
+  return ctx.reply(HELP_COMMAND_TEXT);
 };

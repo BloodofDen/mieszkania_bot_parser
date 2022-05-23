@@ -11,7 +11,7 @@ export const stopBot = (
   store: Store,
   reason: string,
 ) => () => {
-  store.users.forEach((_value, key) => store.remove(key));
+  store.removeAll();
   bot.stop(reason);
 };
 

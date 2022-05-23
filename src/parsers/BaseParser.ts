@@ -1,4 +1,4 @@
-import { deburr } from 'lodash';
+import deburr from 'lodash.deburr';
 import type { ICriteria, IAdvertisement } from '../models';
 
 export abstract class BaseParser {

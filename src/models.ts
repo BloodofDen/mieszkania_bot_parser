@@ -1,5 +1,4 @@
-import { Schema, model } from 'mongoose';
-import type { Document } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 import type { User as ITelegramUser } from 'typegram';
 import { Province, City } from './scenes/models';
 import { Parser } from './parsers';
@@ -54,7 +53,7 @@ export interface IUser {
   criteria: ICriteria;
 };
 
-export interface IUserDocument extends IUser, Document {
+interface IUserDocument extends IUser, Document {
   createdAt: Date;
   updatedAt: Date;
 };

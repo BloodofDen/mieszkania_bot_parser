@@ -1,4 +1,5 @@
-import { isEqual, differenceWith } from 'lodash';
+import isEqual from 'lodash.isequal';
+import differenceWith from 'lodash.differencewith';
 import { Telegraf, Scenes, TelegramError } from 'telegraf';
 import type { IUser, IAdvertisement, StoreCallback } from './models';
 import { Parser } from './parsers';

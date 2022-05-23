@@ -1,5 +1,5 @@
 import { TelegramError } from 'telegraf';
-import { IUser } from '../models';
+import type { IUser } from '../models';
 
 export class BlockedByUserError extends Error {
   constructor(

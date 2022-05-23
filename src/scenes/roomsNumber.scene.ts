@@ -31,7 +31,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
     await ctx.replyWithHTML(
       TEXT[command].ROOMS_NUMBER!,
       Markup.keyboard([
-        Object.keys(RoomsNumber).filter(key => Number(key)),
+        Object.keys(RoomsNumber).filter(Number),
         [LEAVE_BLANK],
       ]).oneTime().resize(),
     );

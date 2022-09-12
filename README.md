@@ -60,6 +60,7 @@ Hope it'll help somebody as it helped to me. Enjoy using it!
 - [ ] Add 1-2 more sites to parse
 - [ ] Add Test Coverage
 - [ ] Add Multi-language Support
+- [ ] Move from MongoDB to Heroku Postgres
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

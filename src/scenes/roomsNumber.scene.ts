@@ -12,7 +12,7 @@ const sceneSteps: MiddlewareFn<Scenes.WizardContext>[] = [
   getFirstSceneInlineQuestion(TEXT),
   async (ctx, done) => {
     const { command } = ctx.wizard.state as IState;
-    const callbackQuery = ctx.callbackQuery as CallbackQuery.DataCallbackQuery;
+    const callbackQuery = ctx.callbackQuery as CallbackQuery;
     const inlineResponse = callbackQuery?.data as BlitzResponse;
 
     if (!inlineResponse) {

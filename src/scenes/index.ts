@@ -39,6 +39,6 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
     await controller.user.upsertUser(user);
     await store.add(user);
 
-    await ctx.reply(TEXT.SETTINGS[command] + TEXT.COMMON);
+    await ctx.reply(TEXT.SETTINGS[command] + ' ' + TEXT.COMMON);
   }),
 ];

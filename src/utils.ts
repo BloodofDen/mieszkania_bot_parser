@@ -6,6 +6,29 @@ import { Parser } from './parsers';
 import { Store } from './store';
 import { BotError } from './errors';
 
+export const validateEnvVars = () => {
+  const {
+    MONGODB_LOGIN,
+    MONGODB_PASSWORD,
+    NODE_ENV,
+    BOT_TOKEN,
+    PORT,
+    DOMAIN,
+  } = process.env;
+
+  if (!MONGODB_LOGIN || !MONGODB_PASSWORD) {
+    throw Error('MONGODB_LOGIN / MONGODB_PASSWORD variables unset');
+  }
+
+  if (!BOT_TOKEN) {
+    throw Error('BOT_TOKEN variable unset');
+  }
+
+  if (NODE_ENV === 'production' && (!PORT || !DOMAIN)) {
+    throw Error('PORT / DOMAIN variables unset');
+  }
+}
+
 export const stopBot = (
   bot: Telegraf<Scenes.WizardContext>,
   store: Store,

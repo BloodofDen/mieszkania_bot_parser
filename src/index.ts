@@ -5,16 +5,20 @@ import { controller } from './controllers';
 import { scenes } from './scenes';
 import { Store } from './store';
 import type { StoreCallback } from './models';
-import { createStoreCallback, stopBot } from './utils';
+import { validateEnvVars, createStoreCallback, stopBot } from './utils';
 import { BotCommand, getCommandHandlerMapper } from './commands';
 
 dotenv.config();
+
+validateEnvVars();
 
 const {
   MONGODB_LOGIN,
   MONGODB_PASSWORD,
   NODE_ENV,
   BOT_TOKEN,
+  PORT,
+  DOMAIN,
 } = process.env;
 
 const MONGODB_PATH = `mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q.mongodb.net/${NODE_ENV}?retryWrites=true&w=majority`;
@@ -51,7 +55,12 @@ async function runBot(): Promise<void> {
     ),
   );
 
-  bot.launch();
+  bot.launch({
+    webhook: NODE_ENV === 'production' ? {
+        port: Number(PORT),
+        domain: DOMAIN!
+      } : undefined,
+  });
 
   // Enable graceful stop
   // ctrl + c event:

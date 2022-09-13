@@ -1,2 +1,2 @@
-export * from './BlockedByUserError';
+export * from './BotError';
 export * from './constants';

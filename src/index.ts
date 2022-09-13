@@ -22,7 +22,7 @@ const MONGODB_PATH = `mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@default
 connect(MONGODB_PATH)
   .then(() => console.log('DB Connection established!'))
   .then(runBot)
-  .catch(err => console.error('Error:::', err));
+  .catch(e => console.error('Error:::', e));
 
 async function runBot(): Promise<void> {
   const bot = new Telegraf<Scenes.WizardContext>(BOT_TOKEN!);

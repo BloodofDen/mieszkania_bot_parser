@@ -4,7 +4,7 @@ import { Telegraf, Scenes, TelegramError } from 'telegraf';
 import type { IUser, IAdvertisement, StoreCallback } from './models';
 import { Parser } from './parsers';
 import { Store } from './store';
-import { BlockedByUserError } from './errors';
+import { BotError } from './errors';
 
 export const stopBot = (
   bot: Telegraf<Scenes.WizardContext>,
@@ -54,9 +54,9 @@ export const createStoreCallback = (
       text,
       { parse_mode: 'HTML' },
     );
-  } catch (err) {
-    throw new BlockedByUserError(
-      err as TelegramError,
+  } catch (e) {
+    throw new BotError(
+      e as TelegramError,
       userTelegramId,
     );
   }

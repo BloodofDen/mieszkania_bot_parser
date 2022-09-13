@@ -8,8 +8,8 @@ export class UserController {
         user,
         { upsert: true },
       );
-    } catch (err) {
-      console.error('Error while upsertUser:::', err);
+    } catch (e) {
+      console.error('Error while upsertUser:::', e);
     }
   }
 
@@ -18,8 +18,8 @@ export class UserController {
 
     try {
       users = await User.find({}).lean();
-    } catch (err) {
-      console.error('Error while getUsers:::', err);
+    } catch (e) {
+      console.error('Error while getUsers:::', e);
     }
 
     return users;
@@ -28,8 +28,8 @@ export class UserController {
   async deleteUser(telegramId: IUser['telegramId']): Promise<void> {
     try {
       await User.deleteOne({ telegramId });
-    } catch (err) {
-      console.error('Error while deleteUser:::', err);
+    } catch (e) {
+      console.error('Error while deleteUser:::', e);
     }
   }
 }

@@ -1,7 +1,7 @@
 import type { User as ITelegramUser } from 'typegram';
 import { Scenes, Markup, MiddlewareFn, TelegramError } from 'telegraf';
 import { ERROR_TYPE } from '../errors';
-import type { IState, IUser, ICriteria } from '../models';
+import { IState, IUser, ICriteria, UserState } from '../models';
 import { Scene, BlitzResponse, ISceneText } from './models';
 
 const unwrapCallback = async (
@@ -50,7 +50,7 @@ export const wizardSceneFactory = (
               return await stepFn(ctx, () => unwrapCallback(ctx, getNextScene));
             } catch (e) {
               if ((<TelegramError>e).code === ERROR_TYPE.BLOCKED_BY_USER) {
-                console.log(`Bot was blocked by the user: ${JSON.stringify(ctx.from, null, 4)}`);
+                console.log('utils.createWizardScene:', `Bot was blocked by the user: ${JSON.stringify(ctx.from, null, 4)}`);
               } else throw e;
             }
           },
@@ -83,6 +83,7 @@ export const mapTelegramUserToUser = (
   const newUser: IUser = {
     telegramId: telegramUser.id,
     isBot: telegramUser.is_bot,
+    currentState: UserState.Active,
     firstName: telegramUser.first_name,
     lastName: telegramUser.last_name,
     nickname: telegramUser.username,

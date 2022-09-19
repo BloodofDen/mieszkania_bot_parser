@@ -1,4 +1,5 @@
-import type { IUser, IAdvertisement, StoreCallback } from './models';
+import isEqual from 'lodash.isequal';
+import { IUser, IAdvertisement, StoreCallback, UserState } from './models';
 import { Parser } from './parsers';
 import { BotError, ERROR_TYPE } from './errors';
 
@@ -26,23 +27,53 @@ export class Store {
   async setup(users: IUser[]): Promise<void> {
     await Promise.all(users.map(user => this.add(user)));
 
-    console.log(`Store successfully set up`);
+    console.log('store.setup:', `Store successfully set up`);
   }
 
   async add(user: IUser): Promise<void> {
-    const isUserAlreadyInStore = this.has(user.telegramId);
-
     this.#users.set(user.telegramId, user);
 
-    const parser = new Parser(user.criteria);
-    this.#parsers.set(user.telegramId, parser);
+    if (user.currentState !== UserState.Paused) {
+      await this.setUpUser(user.telegramId, user.criteria);
+    }
 
-    const advertisements = await parser.parse();
-    this.#advertisements.set(user.telegramId, advertisements);
+    console.log('store.add:', `User with id = '${user.telegramId}' is added`);
+  }
 
-    this.setTimer(user.telegramId, parser, advertisements);
+  async update(
+    telegramId: IUser['telegramId'],
+    dataToUpdate: Partial<Omit<IUser, 'telegramId'>>,
+  ): Promise<void> {
+    const user = this.get(telegramId);
 
-    console.log(`User with id = '${user.telegramId}' was ${isUserAlreadyInStore ? 'updated' : 'added'}`);
+    if (!user) {
+      throw new Error(`User with id = '${telegramId}' not in the store so it can't be updated`);
+    }
+
+    this.#users.set(telegramId, { ...user, ...dataToUpdate });
+
+    if (
+      dataToUpdate.criteria &&
+      !isEqual(user.criteria, dataToUpdate.criteria)
+    ) {
+      await this.setUpUser(telegramId, dataToUpdate.criteria);
+    }
+
+    if (
+      dataToUpdate.currentState === UserState.Paused &&
+      user.currentState !== dataToUpdate.currentState
+    ) {
+      this.unSetUpUser(telegramId);
+    }
+
+    if (
+      dataToUpdate.currentState === UserState.Active &&
+      user.currentState !== dataToUpdate.currentState
+    ) {
+      await this.setUpUser(telegramId, user.criteria);
+    }
+
+    console.log('store.update:', `User with id = '${telegramId}' is updated`);
   }
 
   get(telegramId: IUser['telegramId']): IUser | void {
@@ -54,26 +85,47 @@ export class Store {
   }
 
   remove(telegramId: IUser['telegramId']): void {
-    this.removeTimer(telegramId);
-
+    this.unSetUpUser(telegramId);
     this.#users.delete(telegramId);
-    this.#parsers.delete(telegramId);
-    this.#advertisements.delete(telegramId);
 
-    console.log(`User with id = '${telegramId}' was removed`);
+    console.log('store.remove:', `User with id = '${telegramId}' is removed`);
   }
 
   removeAll(): void {
     this.#users.forEach((_user, telegramId) => this.remove(telegramId));
 
-    console.log(`All users were removed`);
+    console.log('store.removeAll:', `All users were removed`);
   }
 
-  removeTimer(telegramId: IUser['telegramId']): void {
+  private async setUpUser(
+    telegramId: IUser['telegramId'],
+    criteria: IUser['criteria'],
+  ): Promise<void> {
+    const parser = new Parser(criteria);
+    this.#parsers.set(telegramId, parser);
+
+    const advertisements = await parser.parse();
+    this.#advertisements.set(telegramId, advertisements);
+
+    this.setTimer(telegramId, parser, advertisements);
+
+    console.log('store.setUpUser:', `User with id = '${telegramId}' is setup`);
+  }
+
+  private unSetUpUser(telegramId: IUser['telegramId']): void {
+    this.removeTimer(telegramId);
+
+    this.#advertisements.delete(telegramId);
+    this.#parsers.delete(telegramId);
+
+    console.log('store.unSetUpUser:', `User with id = '${telegramId}' is unsetup`);
+  }
+
+  private removeTimer(telegramId: IUser['telegramId']): void {
     const intervalId = this.#timers.get(telegramId);
 
     if (!intervalId) {
-      console.log(`No timer set up for user with id = '${telegramId}'`);
+      console.log('store.removeTimer:', `No timer set up for user with id = '${telegramId}'`);
 
       return;
     }
@@ -81,30 +133,34 @@ export class Store {
     clearInterval(intervalId);
     this.#timers.delete(telegramId);
 
-    console.log(`Timer was removed for user with id = '${telegramId}'`);
+    console.log('store.removeTimer:', `Timer is removed for user with id = '${telegramId}'`);
   }
 
-  setTimer(
+  private setTimer(
     telegramId: IUser['telegramId'],
     parser?: Parser,
     advertisements?: IAdvertisement[],
   ): void {
-    this.#timers.set(telegramId, setInterval(
+    const intervalId = setInterval(
       this.#callback,
       this.#parsingFrequency,
       telegramId,
       parser ?? this.#parsers.get(telegramId)!,
       advertisements ?? this.#advertisements.get(telegramId)!,
-    ));
+    );
 
-    console.log(`Timer was set for user with id = '${telegramId}'`);
+    this.#timers.set(telegramId, intervalId);
+
+    console.log('store.setTimer:', `Timer is set for user with id = '${telegramId}'`);
   }
 
   private handleError = (e: BotError): void => {
-    if (e.telegramError.code === ERROR_TYPE.BLOCKED_BY_USER) {
-      console.log(`Bot was blocked by the user with id = '${e.userId}'`);
-    }
+    console.log('store.handleError:', `Error: ${JSON.stringify(e, null, 4)}`);
 
-    this.removeTimer(e.userId);
+    if (e.telegramError?.code === ERROR_TYPE.BLOCKED_BY_USER) {
+      console.log('store.handleError:', `Bot was blocked by the user with id = '${e.userId}'`);
+
+      this.unSetUpUser(e.userId);
+    }
   }
 }

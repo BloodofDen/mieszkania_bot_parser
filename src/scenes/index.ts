@@ -34,10 +34,18 @@ export const scenes: Scenes.WizardScene<Scenes.WizardContext>[] = [
   createPriceScene(() => Scene.Private),
   createPrivateScene(async (ctx) => {
     const { user: telegramUser, criteria, store, command } = ctx.wizard.state as IState;
-    const user = mapTelegramUserToUser(telegramUser, criteria);
 
-    await controller.user.upsertUser(user);
-    await store.add(user);
+    if (store.has(telegramUser.id)) {
+      const dataToUpdate = { criteria };
+
+      await store.update(telegramUser.id, dataToUpdate);
+      await controller.user.update(telegramUser.id, dataToUpdate);
+    } else {
+      const user = mapTelegramUserToUser(telegramUser, criteria);
+
+      await store.add(user);
+      await controller.user.insert(user);
+    }
 
     await ctx.reply(TEXT.SETTINGS[command] + ' ' + TEXT.COMMON);
   }),

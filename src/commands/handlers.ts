@@ -1,40 +1,50 @@
 import { Scene } from '../scenes/models';
 import { controller } from '../controllers';
-import type { IState } from '../models';
+import { IState, UserState } from '../models';
 import { BotCommand, GetCommandHandler } from './models';
 import {
-  START_COMMAND_TEXT,
-  UPDATE_COMMAND_TEXT,
   STOP_COMMAND_TEXT,
   PAUSE_COMMAND_TEXT,
   RESUME_COMMAND_TEXT,
   HELP_COMMAND_TEXT,
+  LAUNCH_BOT_BACK_TEXT,
+  BOT_IS_WORKING_TEXT,
   BOT_IS_NOT_WORKING_TEXT,
 } from './constants';
 
-export const getOnStartHandler: GetCommandHandler = (store) => (ctx) => {
-  if (store.has(ctx.from!.id)) {
-    return ctx.replyWithHTML(START_COMMAND_TEXT);
+export const getOnStartHandler: GetCommandHandler = (store) => async (ctx) => {
+  const telegramId = ctx.from!.id;
+
+  if (store.has(telegramId)) {
+    return ctx.replyWithHTML(BOT_IS_WORKING_TEXT);
   }
 
-  const initialState: IState = {
-    user: ctx.from!,
-    criteria: { isPrivate: false },
-    store,
-    command: BotCommand.Start,
-  };
+  const user = await controller.user.update(telegramId, { currentState: UserState.Active });
 
-  ctx.scene.enter(Scene.Province, initialState);
+  if (user) {
+    await store.add(user);
+
+    return ctx.replyWithHTML(LAUNCH_BOT_BACK_TEXT);
+  } else {
+    const initialState: IState = {
+      user: ctx.from!,
+      criteria: { isPrivate: false },
+      store,
+      command: BotCommand.Start,
+    };
+
+    ctx.scene.enter(Scene.Province, initialState);
+  }
 };
 
 export const getOnUpdateHandler: GetCommandHandler = (store) => (ctx) => {
   const user = store.get(ctx.from!.id);
 
   if (!user) {
-    return ctx.replyWithHTML(UPDATE_COMMAND_TEXT);
+    return ctx.replyWithHTML(BOT_IS_NOT_WORKING_TEXT);
   }
 
-  store.removeTimer(user.telegramId);
+  store.update(user.telegramId, { currentState: UserState.Paused });
 
   const initialState: IState = {
     user: ctx.from!,
@@ -77,32 +87,46 @@ export const getOnStopHandler: GetCommandHandler = (store) => async (ctx) => {
     return ctx.reply(BOT_IS_NOT_WORKING_TEXT);
   }
 
+  const dataToUpdate = { currentState: UserState.Stopped };
+
   store.remove(telegramId);
-  await controller.user.deleteUser(telegramId);
+  await controller.user.update(telegramId, dataToUpdate);
 
   return ctx.reply(STOP_COMMAND_TEXT);
 };
 
-export const getOnPauseHandler: GetCommandHandler = (store) => (ctx) => {
+export const getOnPauseHandler: GetCommandHandler = (store) => async (ctx) => {
   const telegramId = ctx.from!.id;
+  const user = store.get(telegramId);
 
-  if (!store.has(telegramId)) {
+  if (!user) {
     return ctx.reply(BOT_IS_NOT_WORKING_TEXT);
   }
 
-  store.removeTimer(telegramId);
+  if (user.currentState !== UserState.Paused) {
+    const dataToUpdate = { currentState: UserState.Paused };
+
+    store.update(telegramId, dataToUpdate);
+    await controller.user.update(telegramId, dataToUpdate);
+  }
 
   return ctx.reply(PAUSE_COMMAND_TEXT);
 };
 
-export const getOnResumeHandler: GetCommandHandler = (store) => (ctx) => {
+export const getOnResumeHandler: GetCommandHandler = (store) => async (ctx) => {
   const telegramId = ctx.from!.id;
+  const user = store.get(telegramId);
 
-  if (!store.has(telegramId)) {
+  if (!user) {
     return ctx.reply(BOT_IS_NOT_WORKING_TEXT);
   }
 
-  store.setTimer(telegramId);
+  if (user.currentState !== UserState.Active) {
+    const dataToUpdate = { currentState: UserState.Active };
+
+    store.update(telegramId, dataToUpdate);
+    await controller.user.update(telegramId, dataToUpdate);
+  }
 
   return ctx.reply(RESUME_COMMAND_TEXT);
 };

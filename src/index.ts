@@ -32,7 +32,7 @@ async function runBot(): Promise<void> {
   const bot = new Telegraf<Scenes.WizardContext>(BOT_TOKEN!);
   const stage = new Scenes.Stage(scenes);
 
-  const users = await controller.user.getUsers();
+  const users = await controller.user.getAll();
 
   const storeCallback: StoreCallback = createStoreCallback(bot);
 

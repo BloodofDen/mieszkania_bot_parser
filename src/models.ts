@@ -43,9 +43,16 @@ export interface ICriteria {
   isPrivate: boolean;
 };
 
+export enum UserState {
+  Active = 'Active',
+  Paused = 'Paused',
+  Stopped = 'Stopped',
+}
+
 export interface IUser {
   telegramId: number;
   isBot: boolean;
+  currentState: UserState;
   firstName: string;
   lastName?: string;
   nickname?: string;
@@ -87,6 +94,11 @@ const userSchema = new Schema<IUserDocument>({
   },
   isBot: {
     type: Boolean,
+    required: true,
+  },
+  currentState: {
+    type: String,
+    enum: UserState,
     required: true,
   },
   firstName: {

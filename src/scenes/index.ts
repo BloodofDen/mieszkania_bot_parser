@@ -13,8 +13,8 @@ import { createPrivateScene } from './private.scene';
 
 const TEXT = {
   COMMON: `New ads will come up soon!\n
-/${BotCommand.Print} - to print current settings criteria
-/${BotCommand.Help} - to see all available commands`,
+/${BotCommand.Print} - to print current settings criteria;
+/${BotCommand.Help} - to see all available commands;`,
   SETTINGS: {
     [BotCommand.Start]: `Your settings have been saved!`,
     [BotCommand.Update]: `Your settings have been updated!`,

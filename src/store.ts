@@ -1,7 +1,7 @@
 import isEqual from 'lodash.isequal';
 import { IUser, IAdvertisement, StoreCallback, UserState } from './models';
 import { Parser } from './parsers';
-import { BotError, ERROR_TYPE } from './errors';
+import { BotError } from './errors';
 
 const {
   DEFAULT_PARSING_FREQUENCY = 0.5,
@@ -157,10 +157,8 @@ export class Store {
   private handleError = (e: BotError): void => {
     console.log('store.handleError:', `Error: ${JSON.stringify(e, null, 4)}`);
 
-    if (e.telegramError?.code === ERROR_TYPE.BLOCKED_BY_USER) {
-      console.log('store.handleError:', `Bot was blocked by the user with id = '${e.userId}'`);
-
-      this.unSetUpUser(e.userId);
+    if (e.telegramId) {
+      this.remove(e.telegramId);
     }
   }
 }

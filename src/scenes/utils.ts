@@ -49,7 +49,9 @@ export const wizardSceneFactory = (
             try {
               return await stepFn(ctx, () => unwrapCallback(ctx, getNextScene));
             } catch (e) {
-              if ((<TelegramError>e).code === ERROR_TYPE.BLOCKED_BY_USER) {
+              const telegramError = e as TelegramError;
+
+              if (telegramError.code === ERROR_TYPE.BLOCKED_BY_USER) {
                 console.log('utils.createWizardScene:', `Bot was blocked by the user: ${JSON.stringify(ctx.from, null, 4)}`);
               } else throw e;
             }

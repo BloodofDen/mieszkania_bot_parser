@@ -1,10 +1,11 @@
 import isEqual from 'lodash.isequal';
 import differenceWith from 'lodash.differencewith';
 import { Telegraf, Scenes, TelegramError } from 'telegraf';
-import type { IUser, IAdvertisement, StoreCallback } from './models';
+import { IUser, IAdvertisement, StoreCallback, UserState } from './models';
+import { controller } from './controllers';
 import { Parser } from './parsers';
 import { Store } from './store';
-import { BotError } from './errors';
+import { BotError, ERROR_TYPE } from './errors';
 
 export const validateEnvVars = () => {
   const {
@@ -78,9 +79,17 @@ export const createStoreCallback = (
       { parse_mode: 'HTML' },
     );
   } catch (e) {
-    throw new BotError(
-      e as TelegramError,
-      userTelegramId,
-    );
+    const telegramError = e as TelegramError;
+
+    if (telegramError.code === ERROR_TYPE.BLOCKED_BY_USER) {
+      console.log('utils.storeCallback:', `Bot was blocked by the user with id = '${userTelegramId}'`);
+
+      await controller.user.update(
+        userTelegramId,
+        { currentState: UserState.Stopped },
+      );
+    }
+
+    throw new BotError(telegramError, userTelegramId);
   }
 };

@@ -1,11 +1,10 @@
 import isEqual from 'lodash.isequal';
 import differenceWith from 'lodash.differencewith';
 import { Telegraf, Scenes, TelegramError } from 'telegraf';
-import { IUser, IAdvertisement, StoreCallback, UserState } from './models';
-import { controller } from './controllers';
+import type { IUser, IAdvertisement, StoreCallback } from './models';
 import { Parser } from './parsers';
 import { Store } from './store';
-import { BotError, ERROR_TYPE } from './errors';
+import { BotError } from './errors';
 
 export const validateEnvVars = () => {
   const {
@@ -43,7 +42,7 @@ export const stopBot = (
 export const createStoreCallback = (
   bot: Telegraf<Scenes.WizardContext>,
 ): StoreCallback => async (
-  userTelegramId: IUser['telegramId'],
+  telegramId: IUser['telegramId'],
   parser: Parser,
   advertisements: IAdvertisement[],
 ): Promise<void> => {
@@ -74,23 +73,8 @@ export const createStoreCallback = (
   ).join('\n\n');
 
   try {
-    await bot.telegram.sendMessage(
-      userTelegramId,
-      text,
-      { parse_mode: 'HTML' },
-    );
+    await bot.telegram.sendMessage(telegramId, text, { parse_mode: 'HTML' });
   } catch (e) {
-    const telegramError = e as TelegramError;
-
-    if (telegramError.code === ERROR_TYPE.BLOCKED_BY_USER) {
-      console.log('utils.storeCallback:', `Bot was blocked by the user with id = '${userTelegramId}'`);
-
-      await controller.user.update(
-        userTelegramId,
-        { currentState: UserState.Stopped },
-      );
-    }
-
-    throw new BotError(telegramError, userTelegramId);
+    throw new BotError(e as TelegramError, telegramId);
   }
 };

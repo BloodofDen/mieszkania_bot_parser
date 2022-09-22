@@ -1,7 +1,8 @@
 import isEqual from 'lodash.isequal';
 import { IUser, IAdvertisement, StoreCallback, UserState } from './models';
+import { controller } from './controllers';
 import { Parser } from './parsers';
-import { BotError } from './errors';
+import { BotError, ERROR_TYPE } from './errors';
 
 const {
   DEFAULT_PARSING_FREQUENCY = 0.5,
@@ -21,7 +22,13 @@ export class Store {
   readonly #timers = new Map<IUser['telegramId'], NodeJS.Timer>();
 
   constructor(callback: StoreCallback) {
-    this.#callback = (...params) => callback(...params).catch(this.handleError);
+    this.#callback = async (...params) => {
+      try {
+        await callback(...params);
+      } catch (e) {
+        await this.handleError(e as Error);
+      }
+    }
   }
 
   async setup(users: IUser[]): Promise<void> {
@@ -97,7 +104,7 @@ export class Store {
     console.log('store.removeAll:', `All users were removed`);
   }
 
-  private async setUpUser(
+  async setUpUser(
     telegramId: IUser['telegramId'],
     criteria: IUser['criteria'],
   ): Promise<void> {
@@ -112,7 +119,7 @@ export class Store {
     console.log('store.setUpUser:', `User with id = '${telegramId}' is setup`);
   }
 
-  private unSetUpUser(telegramId: IUser['telegramId']): void {
+  unSetUpUser(telegramId: IUser['telegramId']): void {
     this.removeTimer(telegramId);
 
     this.#advertisements.delete(telegramId);
@@ -154,11 +161,20 @@ export class Store {
     console.log('store.setTimer:', `Timer is set for user with id = '${telegramId}'`);
   }
 
-  private handleError = (e: BotError): void => {
-    console.log('store.handleError:', `Error: ${JSON.stringify(e, null, 4)}`);
+  private async handleError(e: Error): Promise<void> {
+    if (e instanceof BotError) {
+      if (e.telegramError.code === ERROR_TYPE.BLOCKED_BY_USER) {
+        console.log('store.handleError:', `Bot was blocked by the user with id = '${e.telegramId}'`);
 
-    if (e.telegramId) {
-      this.remove(e.telegramId);
+        await controller.user.update(
+          e.telegramId,
+          { currentState: UserState.Stopped },
+        );
+
+        this.remove(e.telegramId);
+      }
+    } else {
+      console.log('store.handleError:', `Error: ${JSON.stringify(e, null, 4)}`);
     }
   }
 }

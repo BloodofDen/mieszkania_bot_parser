@@ -44,7 +44,7 @@ export const getOnUpdateHandler: GetCommandHandler = (store) => (ctx) => {
     return ctx.replyWithHTML(BOT_IS_NOT_WORKING_TEXT);
   }
 
-  store.update(user.telegramId, { currentState: UserState.Paused });
+  store.unSetUpUser(user.telegramId);
 
   const initialState: IState = {
     user: ctx.from!,

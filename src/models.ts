@@ -6,7 +6,7 @@ import { Store } from './store';
 import { BotCommand } from './commands';
 
 export type StoreCallback = (
-  userTelegramId: IUser['telegramId'],
+  telegramId: IUser['telegramId'],
   parser: Parser,
   advertisements: IAdvertisement[],
 ) => Promise<void>;

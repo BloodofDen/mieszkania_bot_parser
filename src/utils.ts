@@ -11,14 +11,15 @@ export const validateEnvVars = () => {
   const {
     MONGODB_LOGIN,
     MONGODB_PASSWORD,
+    MONGODB_HOST,
     NODE_ENV,
     BOT_TOKEN,
     PORT,
     DOMAIN,
   } = process.env;
 
-  if (!MONGODB_LOGIN || !MONGODB_PASSWORD) {
-    throw Error('MONGODB_LOGIN / MONGODB_PASSWORD variables unset');
+  if (!MONGODB_LOGIN || !MONGODB_PASSWORD || !MONGODB_HOST) {
+    throw Error('MONGODB_LOGIN / MONGODB_PASSWORD / MONGODB_HOST variables unset');
   }
 
   if (!BOT_TOKEN) {

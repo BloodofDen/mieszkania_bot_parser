@@ -15,18 +15,14 @@ validateEnvVars();
 const {
   MONGODB_LOGIN,
   MONGODB_PASSWORD,
+  MONGODB_HOST,
   NODE_ENV,
   BOT_TOKEN,
   PORT,
   DOMAIN,
 } = process.env;
 
-const MONGODB_PATH = `mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@defaultcluster.jb36q.mongodb.net/${NODE_ENV}?retryWrites=true&w=majority`;
-
-connect(MONGODB_PATH)
-  .then(() => console.log('DB Connection established!'))
-  .then(runBot)
-  .catch(e => console.error('Error:::', e));
+const MONGODB_PATH = `mongodb+srv://${MONGODB_LOGIN}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${NODE_ENV}?retryWrites=true&w=majority`;
 
 async function runBot(): Promise<void> {
   const bot = new Telegraf<Scenes.WizardContext>(BOT_TOKEN!);
@@ -68,3 +64,8 @@ async function runBot(): Promise<void> {
   // kill, pkill, killall event:
   process.once('SIGTERM', stopBot(bot, store, 'SIGTERM'));
 }
+
+connect(MONGODB_PATH)
+  .then(() => console.log('DB Connection established!'))
+  .then(runBot)
+  .catch(e => console.error('Error:::', e));

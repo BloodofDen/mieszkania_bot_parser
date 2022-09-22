@@ -37,6 +37,7 @@ Hope it'll help somebody as it helped to me. Enjoy using it!
    ```env
    MONGODB_LOGIN=MongoUser
    MONGODB_PASSWORD=MN7nFwmL22YOdl7E
+   MONGODB_HOST=clustername.bk29f.mongodb.net
    BOT_TOKEN=270485614:AAHfiqksKZ8WmR2zSjiQ7_v4TMAKdiHm9T0
    DEFAULT_PARSING_FREQUENCY=0.5
    ```
